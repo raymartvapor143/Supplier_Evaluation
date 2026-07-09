@@ -1,0 +1,397 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\ActivityLog;
+use App\Models\Evaluation;
+use App\Models\Pdf;
+use App\Models\PurchaseOrder;
+use App\Models\Requests;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+
+class AdminController extends Controller
+{
+
+public function activityLogs(Request $request)
+{
+    $logs = ActivityLog::with('user')
+        ->when($request->role && $request->role != 'all', function ($q) use ($request) {
+            $q->where('role', $request->role);
+        })
+        ->when($request->search, function ($q) use ($request) {
+            $q->where(function ($query) use ($request) {
+
+                $query->where('activity','like',"%{$request->search}%")
+                      ->orWhere('description','like',"%{$request->search}%")
+                      ->orWhereHas('user',function($user) use ($request){
+
+                            $user->where('name','like',"%{$request->search}%");
+
+                      });
+
+            });
+        })
+        ->latest()
+        ->paginate(10);
+
+    return response()->json($logs);
+}
+
+
+
+
+public function dashboard(Request $request)
+{
+    $users = User::whereIn('role', ['administrator', 'pgso'])->get();
+
+    $pos = PurchaseOrder::latest()->get();
+
+
+    $endUsers = PurchaseOrder::select('end_user')
+        ->whereNotNull('end_user')
+        ->distinct()
+        ->orderBy('end_user')
+        ->pluck('end_user');
+
+    $suppliers = PurchaseOrder::select('supplier')
+        ->whereNotNull('supplier')
+        ->distinct()
+        ->orderBy('supplier')
+        ->pluck('supplier');
+
+    $requestMessages = Requests::with(['evaluation', 'user'])
+        ->where('status', '!=', 'request')
+        ->latest()
+        ->get()
+        ->map(function ($request) {
+            return (object)[
+                'type' => 'request',
+                'po_no' => $request->evaluation->po_no ?? 'No PO Number',
+                'status' => $request->status,
+                'created_at' => $request->created_at,
+                'user' => $request->user->name ?? 'Unknown User',
+            ];
+        });
+
+    $pdfMessages = Pdf::with('user')
+        ->where('status', 'approved')
+        ->latest()
+        ->get()
+        ->map(function ($pdf) {
+            return (object)[
+                'type' => 'pdf',
+                'po_no' => 'PDF Document',
+                'status' => 'approved',
+                'created_at' => $pdf->created_at,
+                'user' => $pdf->user->name ?? 'Unknown User',
+            ];
+        });
+
+    $messages = collect()
+        ->merge($requestMessages)
+        ->merge($pdfMessages)
+        ->sortByDesc('created_at')
+        ->values()
+        ->take(10);
+
+    $approvedCount = Pdf::where('status', 'approved')->count();
+
+    return view('admin.dashboard', compact(
+        'users',
+        'pos',
+        'messages',
+        'approvedCount',
+        'endUsers',
+        'suppliers'
+    ));
+}
+
+public function fetchData(Request $request)
+{
+    $user = $request->user();
+
+    $query = Evaluation::notDeleted()
+        ->with(['criteriaScores', 'digitalApprovals', 'office'])
+        ->where('status', 'submitted');
+
+    // ROLE FILTER
+    if (!$user->isAdmin() && $user->role !== 'pgso') {
+        $query->where('office_id', $user->office_id);
+    }
+
+    // 🔎 SEARCH
+    if ($request->filled('search')) {
+        $search = $request->search;
+
+        $query->where(function ($q) use ($search) {
+            $q->where('po_no', 'like', "%{$search}%")
+              ->orWhere('supplier_name', 'like', "%{$search}%")
+              ->orWhereHas('office', function ($qo) use ($search) {
+                  $qo->where('name', 'like', "%{$search}%");
+              });
+        });
+    }
+
+    //  PERIOD YEAR FILTER
+    if ($request->filled('period_year')) {
+        $query->where('period_year', $request->period_year);
+    }
+
+    // FETCH DATA
+    $evaluations = $query->latest()->get()->map(function ($evaluation) {
+
+        $percentageMap = [
+            1 => [4 => 20, 3 => 15, 2 => 10, 1 => 5],
+            2 => [4 => 30, 3 => 22.5, 2 => 15, 1 => 7.5],
+            3 => [4 => 25, 3 => 18.75, 2 => 12.5, 1 => 6.25],
+            4 => [4 => 25, 3 => 18.75, 2 => 12.5, 1 => 6.25],
+        ];
+
+        $totalScore = 0;
+
+        foreach ($evaluation->criteriaScores as $score) {
+            $criteriaId = $score->criteria_id;
+            $rating = $score->number_rating;
+
+            if (isset($percentageMap[$criteriaId][$rating])) {
+                $totalScore += $percentageMap[$criteriaId][$rating];
+            }
+        }
+
+        return [
+            'id' => $evaluation->id,
+            'po_no' => $evaluation->po_no,
+            'supplier_name' => $evaluation->supplier_name,
+            'office_name' => optional($evaluation->office)->name,
+
+            // SCORE
+            'total_score' => $totalScore ? round($totalScore, 2) : '-',
+
+            // DATE DISPLAY
+            'date_evaluation' => $evaluation->date_evaluation
+                ? Carbon::parse($evaluation->date_evaluation)->format('Y-m-d')
+                : '-',
+
+            // COVERED PERIOD
+            'covered_period' => $evaluation->covered_period,
+
+            'period_year' => $evaluation->period_year,
+        ];
+    });
+
+    $years = Evaluation::notDeleted()
+        ->select('period_year')
+        ->distinct()
+        ->orderBy('period_year', 'desc')
+        ->pluck('period_year');
+
+    return response()->json([
+        'data' => $evaluations,
+        'years' => $years,
+    ]);
+}
+
+public function downloadSummary(Request $request)
+{
+    // Convert comma-separated string to array
+    $ids = $request->input('ids', []);
+
+    if (is_string($ids)) {
+        $ids = explode(',', $ids);
+    }
+
+    // Keep only numeric IDs
+    $ids = array_filter($ids, fn ($id) => is_numeric($id));
+
+    if (empty($ids)) {
+        return redirect()->back()->with('error', 'No valid evaluations selected.');
+    }
+
+    $evaluations = Evaluation::notDeleted()
+        ->with(['criteriaScores.criteria', 'office'])
+        ->whereIn('id', $ids)
+        ->get();
+
+    if ($evaluations->isEmpty()) {
+        return redirect()->back()->with('error', 'No evaluations found.');
+    }
+
+    // Rating weights
+    $criteriaWeightMap = [
+        1 => [4 => 20, 3 => 15, 2 => 10, 1 => 5],
+        2 => [4 => 30, 3 => 22.5, 2 => 15, 1 => 7.5],
+        3 => [4 => 25, 3 => 18.75, 2 => 12.5, 1 => 6.25],
+        4 => [4 => 25, 3 => 18.75, 2 => 12.5, 1 => 6.25],
+    ];
+
+    // Compute score of every evaluation
+    $summary = $evaluations->map(function ($evaluation) use ($criteriaWeightMap) {
+
+        $overallScore = 0;
+
+        foreach ($evaluation->criteriaScores as $score) {
+            $criteriaId = $score->criteria_id;
+            $rating = $score->number_rating ?? 0;
+
+            $overallScore += $criteriaWeightMap[$criteriaId][$rating] ?? 0;
+        }
+
+        return [
+            'department' => $evaluation->office->name ?? '',
+            'supplier' => $evaluation->supplier_name,
+            'score' => $overallScore,
+            'remarks' => $evaluation->criteriaScores
+                ->filter(fn ($item) => !empty($item->remarks))
+                ->map(function ($item) {
+                    return [
+                        'criteria' => $item->criteria->criteria_name ?? '',
+                        'remarks' => $item->remarks,
+                    ];
+                }),
+        ];
+    })
+
+    // Group by Department + Supplier
+    ->groupBy(function ($item) {
+        return $item['department'] . '|' . $item['supplier'];
+    })
+
+    ->map(function ($group) {
+
+        $remarks = collect();
+
+        foreach ($group as $item) {
+            $remarks = $remarks->merge($item['remarks']);
+        }
+
+        return [
+            'department' => $group->first()['department'],
+            'supplier' => $group->first()['supplier'],
+            'total_evaluations' => $group->count(),
+            'average_score' => round($group->avg('score'), 2),
+            'remarks' => $remarks,
+        ];
+
+    })->values();
+
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        'pdf.summary',
+        compact('summary')
+    )->setPaper('a4', 'landscape');
+
+    return $pdf->download('evaluation-summary.pdf');
+}
+
+
+
+
+public function getDepartments()
+{
+    $departments = Evaluation::notDeleted()
+        ->with('office')
+        ->where('status', 'submitted')
+        ->get()
+        ->pluck('office.name')
+        ->unique()
+        ->values();
+
+    return response()->json($departments);
+}
+
+
+
+public function getDepartmentSuppliers(Request $request, $department)
+{
+    $year = $request->query('year');
+
+    $evaluations = Evaluation::notDeleted()
+        ->whereHas('office', function ($q) use ($department) {
+            $q->where('name', $department);
+        })
+        ->where('status', 'submitted')
+        ->when(!empty($year) && $year !== 'all', function ($query) use ($year) {
+            $query->whereYear('date_evaluation', $year);
+        })
+        ->with('criteriaScores')
+        ->get();
+
+    $criteriaWeightMap = [
+        1 => [4 => 20, 3 => 15, 2 => 10, 1 => 5],
+        2 => [4 => 30, 3 => 22.5, 2 => 15, 1 => 7.5],
+        3 => [4 => 25, 3 => 18.75, 2 => 12.5, 1 => 6.25],
+        4 => [4 => 25, 3 => 18.75, 2 => 12.5, 1 => 6.25],
+    ];
+
+    // Group by supplier
+    $grouped = $evaluations->groupBy('supplier_name');
+
+    $result = [];
+
+    foreach ($grouped as $supplier => $evals) {
+
+        $totalScore = 0;
+        $count = $evals->count();
+
+        foreach ($evals as $evaluation) {
+
+            $evaluationScore = 0;
+
+            foreach ($evaluation->criteriaScores as $score) {
+                $criteriaId = $score->criteria_id;
+                $rating = $score->number_rating;
+
+                if (isset($criteriaWeightMap[$criteriaId][$rating])) {
+                    $evaluationScore += $criteriaWeightMap[$criteriaId][$rating];
+                }
+            }
+
+            $totalScore += $evaluationScore;
+        }
+
+        $average = $count > 0 ? $totalScore / $count : 0;
+
+        $result[] = [
+            'supplier' => $supplier,
+            'average' => round($average, 2),
+            'evaluations_count' => $count
+        ];
+    }
+
+    // Sort highest to lowest
+    usort($result, function ($a, $b) {
+        return $b['average'] <=> $a['average'];
+    });
+
+    return response()->json($result);
+}
+
+
+public function getMonthlyEvaluations(Request $request, $department)
+{
+    $year = $request->query('year');
+
+    $query = Evaluation::notDeleted()
+        ->select(
+            DB::raw('MONTH(date_evaluation) as month'),
+            DB::raw('COUNT(*) as count')
+        )
+        ->whereHas('office', function ($q) use ($department) {
+            $q->where('name', $department);
+        })
+        ->where('status', 'submitted');
+
+    if (!empty($year) && $year !== 'all') {
+        $query->whereYear('date_evaluation', $year);
+    }
+
+    $data = $query->groupBy(DB::raw('MONTH(date_evaluation)'))
+        ->orderBy('month')
+        ->get();
+
+    return response()->json($data);
+}
+}

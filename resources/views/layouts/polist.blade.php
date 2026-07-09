@@ -1,0 +1,663 @@
+@include('layouts.pobulk')
+
+<div id="poListModal_v2" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-5xl p-6 max-h-[90vh] overflow-y-auto">
+        @include('layouts.pobulk')
+
+        <!-- HEADER -->
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-xl font-semibold">Purchase Orders List</h2>
+
+            <div class="flex space-x-2">
+        @if(auth()->user()->role === 'administrator')
+                        <button onclick="openPOInsertModal_v2()"
+                            class="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm">
+                            + Add PO
+                        </button>
+        @endif
+    <button onclick="openBulkAddEvaluateModal()"
+        class="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm">
+        Bulk Add Evaluate
+    </button>
+                <button onclick="closePOModal_v2()" class="text-gray-500 hover:text-red-500 text-xl">
+                    &times;
+                </button>
+
+            </div>
+        </div>
+
+        <!-- SEARCH -->
+        <div class="mt-3 mb-4">
+            <input type="text"
+                id="poSearchInput_v2"
+                onkeyup="searchPO_v2()"
+                placeholder="Search PO No, End User, Supplier..."
+                class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400">
+        </div>
+
+
+        <!-- Upload PDF Modal -->
+        <div id="uploadPOModal"
+             class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+
+            <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+
+                <h2 class="text-lg font-semibold mb-4">
+                    Upload Purchase Order PDF
+                </h2>
+
+                <form id="uploadPOForm"
+                      method="POST"
+                      enctype="multipart/form-data">
+
+                    @csrf
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">
+                            Select PDF
+                        </label>
+
+                        <input type="file"
+                               name="pdf_po"
+                               accept=".pdf"
+                               required
+                               class="w-full border rounded p-2">
+                    </div>
+
+                    <div class="flex justify-end gap-2">
+
+                        <button type="button"
+                                onclick="closeUploadPOModal()"
+                                class="px-4 py-2 bg-gray-300 rounded">
+                            Cancel
+                        </button>
+
+                        <button type="submit"
+                                class="px-4 py-2 bg-blue-600 text-white rounded">
+                            Upload
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </div>
+
+        </div>
+<script>
+
+function openUploadPOModal(poId)
+{
+    const modal = document.getElementById('uploadPOModal');
+
+    document.getElementById('uploadPOForm').action =
+        `/purchase-orders/${poId}/upload-pdf`;
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeUploadPOModal()
+{
+    const modal = document.getElementById('uploadPOModal');
+
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+</script>
+
+
+
+        <!-- TABLE -->
+        <div class="overflow-x-auto">
+            <table class="w-full border border-gray-200 rounded-lg overflow-hidden">
+
+                <thead class="bg-gray-100 text-left">
+                    <tr>
+                        <th class="p-3 border">PO No</th>
+                        <th class="p-3 border">PR No</th>
+                        <th class="p-3 border">End User</th>
+                        <th class="p-3 border">Supplier</th>
+                        <th class="p-3 border">PO PDF</th>
+                        <th class="p-3 border">Status</th>
+                        <th class="p-3 border">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                @foreach($pos as $po)
+                <tr class="hover:bg-gray-50 po-row-v2">
+
+                    <td class="p-3 border">{{ $po->po_no }}</td>
+                    <td class="p-3 border">{{ $po->pr_no ?? 'N/A' }}</td>
+                    <td class="p-3 border">{{ $po->end_user }}</td>
+                    <td class="p-3 border">{{ $po->supplier }}</td>
+
+                    <td class="p-3 border">
+                        @if($po->pdf_po)
+                            <a href="{{ route('po.view.pdf', $po->id) }}"
+                               target="_blank"
+                               class="text-blue-600 hover:underline">
+                                View PDF
+                            </a>
+                        @else
+                            <span class="text-gray-400">No PDF</span>
+                        @endif
+                    </td>
+
+                    <td class="p-3 border">
+                        @php
+                            $status = $po->status ?? 'Pending';
+                        @endphp
+
+                        <span class="px-2 py-1 text-xs rounded-full
+                            @if($status == 'Added')
+                                bg-blue-100 text-blue-700
+                            @elseif($status == 'Approved')
+                                bg-green-100 text-green-700
+                            @elseif($status == 'Cancelled')
+                                bg-red-100 text-red-700
+                            @else
+                                bg-yellow-100 text-yellow-700
+                            @endif
+                        ">
+                            {{ $status }}
+                        </span>
+                    </td>
+
+                <td class="p-3 border relative">
+
+                    @php
+                        $status = $po->status ?? 'Pending';
+                        $isAdmin = auth()->user()->role === 'administrator';
+                    @endphp
+
+                    {{-- 🚫 NON-ADMIN: HIDE ACTION IF ADDED --}}
+                    @if(in_array($status, ['Added', 'Cancelled']) && !$isAdmin)
+
+                        <span class="text-xs text-gray-400 italic">Locked</span>
+
+                    @else
+
+                        <div class="po-action-wrapper-v2 relative inline-block text-left">
+
+                            <button onclick="togglePOAction_v2(this)"
+                                class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm">
+                                Action ▼
+                            </button>
+
+                            <div class="po-action-menu-v2 hidden absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50">
+
+                                {{-- 🚫 EVALUATE RULE --}}
+                                @if($status !== 'Added' && $status !== 'Cancelled')
+                                    <a href="#"
+                                       onclick='openPOEvaluateModal_v2(
+                                           @json($po->id),
+                                           @json($po->po_no),
+                                           @json($po->supplier),
+                                           @json($po->end_user)
+                                       )'
+                                       class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                        Add Evaluation
+                                    </a>
+                                @endif
+
+<a href="#"
+   onclick='openPOEditModal_v2(
+       @json($po->id),
+       @json($po->po_no),
+       @json($po->pr_no),
+       @json($po->supplier),
+       @json($po->end_user),
+       @json($po->status),
+       @json($po->pdf_po ? route("po.view.pdf", $po->id) : null),
+       @json(auth()->user()->role)
+   )'
+   class="block px-4 py-2 text-sm hover:bg-gray-100">
+    View
+</a>
+
+                                {{-- ADMIN ONLY ACTIONS --}}
+                                @if($isAdmin)
+
+
+
+                                    @if(empty($po->pdf_po))
+                                        <a href="#"
+                                           onclick="openUploadPOModal({{ $po->id }})"
+                                           class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                            Upload PDF
+                                        </a>
+                                    @endif
+
+                                    <form action="{{ route('po.delete', $po->id) }}" method="POST"
+                                          onsubmit="confirmDeletePO(event, this)">
+
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button type="submit"
+                                            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                            Delete
+                                        </button>
+
+                                    </form>
+
+                                @endif
+
+                            </div>
+
+                        </div>
+
+                    @endif
+
+                </td>
+
+                </tr>
+                @endforeach
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<div id="poInsertModal_v2" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold">Add Purchase Order</h2>
+
+            <button onclick="closePOInsertModal_v2()" class="text-gray-500 hover:text-red-500 text-xl">
+                &times;
+            </button>
+        </div>
+
+        <form action="{{ route('po.store') }}"
+              method="POST"
+              enctype="multipart/form-data">
+
+            @csrf
+
+            <div class="mb-3">
+                <label class="text-sm">PO Number</label>
+                <input type="text"
+                       name="po_no"
+                       class="w-full border rounded-lg px-3 py-2"
+                       required>
+            </div>
+
+            <div class="mb-3">
+                <label class="text-sm">PR Number</label>
+                <input type="text"
+                       name="pr_no"
+                       class="w-full border rounded-lg px-3 py-2">
+            </div>
+
+            <div class="mb-3">
+                <label class="text-sm">End User</label>
+                <input type="text"
+                       name="end_user"
+                       class="w-full border rounded-lg px-3 py-2"
+                       required>
+            </div>
+
+            <div class="mb-3">
+                <label class="text-sm">Supplier</label>
+                <input type="text"
+                       name="supplier"
+                       class="w-full border rounded-lg px-3 py-2"
+                       required>
+            </div>
+
+            <!-- PDF Upload -->
+            <div class="mb-3">
+                <label class="text-sm">Purchase Order PDF</label>
+                <input type="file"
+                       name="pdf_po"
+                       accept=".pdf"
+                       class="w-full border rounded-lg px-3 py-2">
+
+                <small class="text-gray-500">
+                    PDF only (Maximum 10MB)
+                </small>
+            </div>
+
+            <input type="hidden" name="status" value="Active">
+
+            <div class="flex justify-end space-x-2 mt-4">
+
+                <button type="button"
+                        onclick="closePOInsertModal_v2()"
+                        class="px-3 py-2 bg-gray-300 rounded">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                        class="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                    Save
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<div id="poEvaluateModal_v2" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
+
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold">Evaluate Purchase Order</h2>
+
+            <button onclick="closePOEvaluateModal_v2()" class="text-gray-500 hover:text-red-500 text-xl">
+                &times;
+            </button>
+        </div>
+
+        <form id="poEvaluateForm_v2" method="POST">
+            @csrf
+
+            <div class="mb-3">
+                <label class="text-sm font-semibold">Supplier Name</label>
+                <input readonly type="text" name="supplier_name" id="eval_supplier_v2"
+                    class="w-full border rounded-lg px-3 py-2" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="text-sm font-semibold">PO No</label>
+                <input readonly type="text" name="po_no" id="eval_po_no_v2"
+                    class="w-full border rounded-lg px-3 py-2" required>
+            </div>
+            <div class="mb-3">
+                <label class="text-sm font-semibold">Department</label>
+                <input readonly type="text" name="end_user" id="eval_end_user_v2"
+                    class="w-full border rounded-lg px-3 py-2" required>
+            </div>
+
+            <!-- OFFICE AUTO -->
+            <input type="hidden" name="office_id" value="{{ auth()->user()->office_id }}">
+
+            <div class="mb-3">
+                <label for="department" class="text-sm font-semibold">
+                    Your Department
+                </label>
+
+                <input
+                    type="text"
+                    id="department"
+                    name="department"
+                    class="w-full border rounded-lg px-3 py-2 bg-gray-100"
+                    value="{{ auth()->user()->office->name ?? 'No Office Assigned' }}"
+                    disabled>
+            </div>
+
+            <div class="flex justify-end space-x-2 mt-4">
+
+                <button type="button"
+                    onclick="closePOEvaluateModal_v2()"
+                    class="px-3 py-2 bg-gray-300 rounded">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                    class="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                    Save Evaluation
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+</div>
+<script>
+
+// ===============================
+// MODAL CONTROL
+// ===============================
+function openPOModal_v2() {
+    document.getElementById('poListModal_v2').classList.remove('hidden');
+    document.getElementById('poListModal_v2').classList.add('flex');
+}
+
+function closePOModal_v2() {
+    document.getElementById('poListModal_v2').classList.add('hidden');
+    document.getElementById('poListModal_v2').classList.remove('flex');
+}
+
+function openPOInsertModal_v2() {
+    document.getElementById('poInsertModal_v2').classList.remove('hidden');
+    document.getElementById('poInsertModal_v2').classList.add('flex');
+}
+
+function closePOInsertModal_v2() {
+    document.getElementById('poInsertModal_v2').classList.add('hidden');
+    document.getElementById('poInsertModal_v2').classList.remove('flex');
+}
+
+// ===============================
+// EVALUATE MODAL
+// ===============================
+function openPOEvaluateModal_v2(poId, poNo, supplier, endUser) {
+
+    document.getElementById('eval_po_no_v2').value = poNo;
+    document.getElementById('eval_supplier_v2').value = supplier;
+    document.getElementById('eval_end_user_v2').value = endUser;
+
+    document.getElementById('poEvaluateForm_v2').action =
+        `/purchase-orders/${poId}/evaluate`;
+
+    document.getElementById('poEvaluateModal_v2').classList.remove('hidden');
+    document.getElementById('poEvaluateModal_v2').classList.add('flex');
+}
+
+function closePOEvaluateModal_v2() {
+    document.getElementById('poEvaluateModal_v2').classList.add('hidden');
+    document.getElementById('poEvaluateModal_v2').classList.remove('flex');
+}
+
+
+
+// ===============================
+// SEARCH
+// ===============================
+function searchPO_v2() {
+    let input = document.getElementById("poSearchInput_v2");
+    let filter = input.value.toLowerCase();
+
+    document.querySelectorAll(".po-row-v2").forEach(row => {
+        row.style.display = row.textContent.toLowerCase().includes(filter) ? "" : "none";
+    });
+}
+
+// ===============================
+// ACTION DROPDOWN (SMART POSITION)
+// ===============================
+function togglePOAction_v2(button) {
+    let menu = button.nextElementSibling;
+    let rect = button.getBoundingClientRect();
+
+    document.querySelectorAll('.po-action-menu-v2').forEach(el => {
+        if (el !== menu) el.classList.add('hidden');
+    });
+
+    if (menu.classList.contains('hidden')) {
+
+        const menuWidth = 160;
+        const offset = 8;
+
+        let leftPosition = rect.right + offset;
+
+        if (leftPosition + menuWidth > window.innerWidth) {
+            leftPosition = rect.left - menuWidth - offset;
+        }
+
+        menu.style.position = 'fixed';
+        menu.style.top = rect.top + 'px';
+        menu.style.left = leftPosition + 'px';
+
+        menu.classList.remove('hidden');
+
+    } else {
+        menu.classList.add('hidden');
+    }
+}
+
+// CLOSE OUTSIDE CLICK
+document.addEventListener('click', function (e) {
+    if (!e.target.closest('.po-action-wrapper-v2')) {
+        document.querySelectorAll('.po-action-menu-v2').forEach(el => {
+            el.classList.add('hidden');
+        });
+    }
+});
+
+@if(session('po_deleted'))
+Swal.fire({
+    icon: 'success',
+    title: 'Purchase Order Deleted',
+    text: '{{ session("po_deleted") }}',
+    confirmButtonColor: '#f97316',
+    background: '#fff',
+    timer: 2200,
+    timerProgressBar: true,
+    showConfirmButton: false,
+    customClass: {
+        popup: 'rounded-2xl'
+    }
+});
+@endif
+// ===============================
+// SWEETALERT - ADD PO SUCCESS
+// ===============================
+@if(session('po_success'))
+Swal.fire({
+    icon: 'success',
+    title: 'Purchase Order Added',
+    html: `
+        The Purchase Order has been successfully added.<br><br>
+        You can now view it in the <b>Purchase Order List</b>.
+    `,
+    confirmButtonText: 'OK'
+});
+@endif
+
+
+// ===============================
+// SWEETALERT - EVALUATION SUCCESS
+// ===============================
+@if(session('po_success_added'))
+Swal.fire({
+    icon: 'success',
+    title: 'Success',
+    html: `
+        The P.O. has been saved to the <b>Evaluation Management</b> list.<br><br>
+        Please proceed to the <b>Pending</b> tab to evaluate the supplier.
+    `,
+    confirmButtonText: 'OK'
+});
+@endif
+
+
+// ===============================
+// SWEETALERT - ERROR
+// ===============================
+@if(session('error'))
+Swal.fire({
+    icon: 'error',
+    title: 'Error',
+    text: '{{ session('error') }}',
+    confirmButtonText: 'OK'
+});
+@endif
+
+@if(session('po_updated'))
+Swal.fire({
+    icon: 'success',
+    title: 'Updated!',
+    text: 'Purchase Order has been saved.',
+    timer: 2000,
+    showConfirmButton: false
+});
+@endif
+
+
+@if(session('success_pdf'))
+Swal.fire({
+    icon: 'success',
+    title: 'Updated!',
+    text: 'Purchase Order PDF uploaded successfully.',
+    timer: 2000,
+    showConfirmButton: false
+});
+@endif
+
+@if(session('po_error'))
+
+Swal.fire({
+    icon: 'error',
+    title: 'Update Failed!',
+    text: "{{ session('po_error') }}",
+    confirmButtonText: 'OK'
+});
+@endif
+
+
+@if(session('po_error_update'))
+
+Swal.fire({
+    icon: 'error',
+    title: 'Update Failed!',
+    text: "{{ session('po_error_update') }}",
+    confirmButtonText: 'OK'
+});
+@endif
+
+
+
+
+
+
+
+
+
+function confirmDeletePO(event, form) {
+    event.preventDefault();
+
+    Swal.fire({
+        title: 'Delete Purchase Order?',
+        text: "This action cannot be undone.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#f97316',
+        cancelButtonColor: '#9ca3af',
+        confirmButtonText: 'Yes, Delete',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        background: '#fff',
+        customClass: {
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-lg px-4 py-2',
+            cancelButton: 'rounded-lg px-4 py-2'
+        }
+    }).then((result) => {
+
+        if (result.isConfirmed) {
+            form.submit();
+        }
+
+    });
+}
+
+
+</script>
+
