@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('offices', function (Blueprint $table) {
             $table->id();
 
-            $table->string('abbreviation');
-            $table->string('name');
+            $table->string('abbreviation')->nullable();
+            $table->string('name')->nullable();
             $table->string('head')->nullable();
             $table->string('designation')->nullable();
             $table->string('responsibility_number')->nullable();
