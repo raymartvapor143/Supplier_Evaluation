@@ -21,11 +21,20 @@ public function dashboard()
         ->orderBy('name')
         ->get();
 
-
     $poQuery = PurchaseOrder::query();
+
     /** @var User $user */
     if (!$user->isAdmin()) {
-        $poQuery->where('end_user', $user->office->abbreviation);
+        $office = $user->office->abbreviation;
+
+        if ($office === 'PMO') {
+            $poQuery->where(function ($query) {
+                $query->where('end_user', 'PMO')
+                      ->orWhere('end_user', 'LIKE', 'PMO-%');
+            });
+        } else {
+            $poQuery->where('end_user', $office);
+        }
     }
 
     // Purchase Orders
@@ -49,14 +58,13 @@ public function dashboard()
         ->orderBy('supplier')
         ->pluck('supplier');
 
-
     $requestMessages = Requests::with('evaluation')
-        ->where('user_id', auth()->id())
+        ->where('user_id', $user->id)
         ->where('status', '!=', 'request')
         ->latest()
         ->get()
         ->map(function ($request) {
-            return (object)[
+            return (object) [
                 'type'       => 'request',
                 'po_no'      => $request->evaluation->po_no ?? 'No PO Number',
                 'status'     => $request->status,
@@ -64,14 +72,13 @@ public function dashboard()
             ];
         });
 
-
     $pdfMessages = Pdf::query()
-        ->where('user_id', auth()->id())
+        ->where('user_id', $user->id)
         ->where('status', 'approved')
         ->latest()
         ->get()
         ->map(function ($pdf) {
-            return (object)[
+            return (object) [
                 'type'       => 'pdf',
                 'po_no'      => 'PDF Document',
                 'status'     => 'approved',
@@ -79,8 +86,7 @@ public function dashboard()
             ];
         });
 
-
-    $messages = collect($requestMessages)
+    $messages = $requestMessages
         ->merge($pdfMessages)
         ->sortByDesc('created_at')
         ->values()
