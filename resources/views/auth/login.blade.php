@@ -33,7 +33,7 @@
   </style>
 </head>
 
-{{-- <script src="{{asset('script/block.js')}}"></script> --}}
+<script src="{{asset('script/block.js')}}"></script>
 
 
 <body class="bg-gray-100">
