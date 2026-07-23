@@ -274,7 +274,7 @@ public function loginControl(Request $request)
             ]);
 
             return response()->json([
-                'message' => 'Your account is pending approval.'
+                'message' => 'Your account is pending approval. Your account will remain pending until you submit a User Access Form to the Office of the Provincial Procurement Management Officer for approval.'
             ], 403);
 
         case 'active':
