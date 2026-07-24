@@ -319,11 +319,11 @@ public function uploadPdf(Request $request, $id)
     try {
 
         $request->validate([
-            'pdf_po' => 'required|mimes:pdf|max:10240',
+            'pdf_po' => 'required|mimes:pdf|max:30240',
         ], [
             'pdf_po.required' => 'Please select a PDF file.',
             'pdf_po.mimes'    => 'Only PDF files are allowed.',
-            'pdf_po.max'      => 'The PDF must not exceed 10 MB.',
+            'pdf_po.max'      => 'The PDF must not exceed 30 MB.',
         ]);
 
         $po = PurchaseOrder::findOrFail($id);
