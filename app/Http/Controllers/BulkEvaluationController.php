@@ -240,14 +240,36 @@ public function getPOList(Request $request)
         ->where(function ($q) {
             $q->whereNull('status')
               ->orWhere('status', '!=', 'Added');
-        })
-        ->where('end_user', $user->office->abbreviation);
+        });
+    /** @var User $user */
+    if (!$user->isAdmin()) {
 
-    // Optional additional filter (if needed)
-    if ($request->filled('end_user')) {
-        $query->where('end_user', $request->end_user);
+        $office = $user->office->abbreviation;
+
+        if ($office === 'PMO') {
+            $query->where(function ($q) {
+                $q->where('end_user', 'PMO')
+                  ->orWhere('end_user', 'LIKE', 'PMO-%');
+            });
+        } else {
+            $query->where('end_user', $office);
+        }
     }
 
+    // Optional end user filter
+    if ($request->filled('end_user')) {
+
+        if ($request->end_user === 'PMO') {
+            $query->where(function ($q) {
+                $q->where('end_user', 'PMO')
+                  ->orWhere('end_user', 'LIKE', 'PMO-%');
+            });
+        } else {
+            $query->where('end_user', $request->end_user);
+        }
+    }
+
+    // Supplier filter
     if ($request->filled('supplier')) {
         $query->where('supplier', $request->supplier);
     }
@@ -258,20 +280,43 @@ public function getPOList(Request $request)
 }
 
 
-    public function getSuppliersByEndUser(Request $request)
-    {
-        $query = PurchaseOrder::query()
-            ->whereNotNull('supplier')
-            ->where('supplier', '!=', '');
+public function getSuppliersByEndUser(Request $request)
+{
+    $user = auth()->user();
 
-        if ($request->filled('end_user')) {
+    $query = PurchaseOrder::query()
+        ->whereNotNull('supplier')
+        ->where('supplier', '!=', '');
+    /** @var User $user */
+    if (!$user->isAdmin()) {
+        $office = $user->office->abbreviation;
+
+        if ($office === 'PMO') {
+            $query->where(function ($q) {
+                $q->where('end_user', 'PMO')
+                  ->orWhere('end_user', 'LIKE', 'PMO-%');
+            });
+        } else {
+            $query->where('end_user', $office);
+        }
+    } elseif ($request->filled('end_user')) {
+        // Admin can filter by any end user
+        if ($request->end_user === 'PMO') {
+            $query->where(function ($q) {
+                $q->where('end_user', 'PMO')
+                  ->orWhere('end_user', 'LIKE', 'PMO-%');
+            });
+        } else {
             $query->where('end_user', $request->end_user);
         }
-
-        return response()->json(
-            $query->distinct()->orderBy('supplier')->pluck('supplier')
-        );
     }
+
+    return response()->json(
+        $query->distinct()
+              ->orderBy('supplier')
+              ->pluck('supplier')
+    );
+}
 
 
     public function storeBulkPOEvaluation(Request $request)
