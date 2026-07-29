@@ -1,188 +1,608 @@
 <!-- BULK ADD EVALUATE MODAL -->
 <div id="bulkAddEvaluateModal"
-    class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center p-4">
+    class="fixed inset-0 bg-gray-900/70 backdrop-blur-sm hidden z-50 items-center justify-center p-4">
 
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-6xl">
+
+    <div class="bg-white rounded-3xl shadow-2xl
+                w-full max-w-6xl
+                max-h-[92vh]
+                overflow-hidden
+                flex flex-col
+                border border-gray-100">
+
 
         <!-- HEADER -->
-        <div class="flex items-center justify-between border-b px-6 py-4">
+        <div class="bg-gradient-to-r from-green-600 to-green-700
+                    px-7 py-6 text-white">
 
-            <div>
-                <h2 class="text-xl font-bold text-gray-800">
-                    Bulk Add Evaluation
-                </h2>
 
-                <p class="text-sm text-gray-500">
-                    Select Purchase Orders to add into evaluation.
-                </p>
+            <div class="flex items-center justify-between">
+
+
+                <div>
+
+                    <h2 class="text-2xl font-bold flex items-center gap-2">
+                        📋 Bulk Add Evaluation
+                    </h2>
+
+                    <p class="text-green-100 text-sm mt-1">
+                        Select multiple Purchase Orders and add them to evaluation.
+                    </p>
+
+                </div>
+
+
+                <button type="button"
+                    onclick="closeBulkAddEvaluateModal()"
+                    class="
+                    w-10 h-10
+                    rounded-full
+                    bg-white/20
+                    hover:bg-white/30
+                    transition
+                    text-2xl">
+
+                    &times;
+
+                </button>
+
+
             </div>
 
-            <button type="button"
-                onclick="closeBulkAddEvaluateModal()"
-                class="text-gray-400 hover:text-red-500 text-2xl leading-none">
-                &times;
-            </button>
+
         </div>
+
+
 
         <!-- BODY -->
-        <div class="p-6">
+        <div class="flex-1 overflow-y-auto p-7">
 
-            <!-- FILTERS -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
 
-                <!-- END USER -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">
-                        End User
-                    </label>
+            <!-- FILTER CARD -->
+              <div class="
+                  sticky
+                  top-0
+                  z-20
+                  bg-gray-50
+                  border
+                  border-gray-200
+                  rounded-2xl
+                  p-5
+                  mb-6
+                  shadow-sm
+              ">
 
-                    <select id="bulk_end_user"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
-                        onchange="handleEndUserChange()">
 
-                        <option value="">All End Users</option>
+                <div class="flex items-center gap-2 mb-4">
 
-                        @forelse($endUsers as $endUser)
-                            <option value="{{ $endUser }}">
-                                {{ $endUser }}
-                            </option>
-                        @empty
-                            <option disabled>
-                                No End Users Found
-                            </option>
-                        @endforelse
+                    <span class="text-lg">
+                        🔎
+                    </span>
 
-                    </select>
+                    <h3 class="font-semibold text-gray-700">
+                        Filter Purchase Orders
+                    </h3>
+
                 </div>
 
-                <!-- SUPPLIER -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">
-                        Supplier
-                    </label>
 
-                    <select id="bulk_supplier"
-                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
-                        onchange="loadBulkPOs()">
 
-                        <option value="">All Suppliers</option>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                        @forelse($suppliers as $supplier)
-                            <option value="{{ $supplier }}">
-                                {{ $supplier }}
+
+                    <!-- END USER -->
+                    <div>
+
+                        <label class="
+                            block
+                            text-sm
+                            font-semibold
+                            text-gray-700
+                            mb-2">
+
+                            End User
+
+                        </label>
+
+
+                        <select id="bulk_end_user"
+                            class="
+                            w-full
+                            rounded-xl
+                            border-gray-300
+                            bg-white
+                            px-4
+                            py-3
+                            shadow-sm
+                            focus:ring-2
+                            focus:ring-green-400
+                            focus:border-green-400
+                            outline-none
+                            transition"
+                            onchange="handleEndUserChange()">
+
+
+                            <option value="">
+                                All End Users
                             </option>
-                        @empty
-                            <option disabled>
-                                No Suppliers Found
-                            </option>
-                        @endforelse
 
-                    </select>
+
+                            @forelse($endUsers as $endUser)
+
+                                <option value="{{ $endUser }}">
+                                    {{ $endUser }}
+                                </option>
+
+                            @empty
+
+                                <option disabled>
+                                    No End Users Found
+                                </option>
+
+                            @endforelse
+
+
+                        </select>
+
+
+                    </div>
+
+
+
+                    <!-- SUPPLIER -->
+                    <div>
+
+
+                        <label class="
+                            block
+                            text-sm
+                            font-semibold
+                            text-gray-700
+                            mb-2">
+
+                            Supplier
+
+                        </label>
+
+
+                        <select id="bulk_supplier"
+                            class="
+                            w-full
+                            rounded-xl
+                            border-gray-300
+                            bg-white
+                            px-4
+                            py-3
+                            shadow-sm
+                            focus:ring-2
+                            focus:ring-green-400
+                            focus:border-green-400
+                            outline-none
+                            transition"
+                            onchange="loadBulkPOs()">
+
+
+
+                            <option value="">
+                                All Suppliers
+                            </option>
+
+
+
+                            @forelse($suppliers as $supplier)
+
+                                <option value="{{ $supplier }}">
+                                    {{ $supplier }}
+                                </option>
+
+                            @empty
+
+                                <option disabled>
+                                    No Suppliers Found
+                                </option>
+
+                            @endforelse
+
+
+                        </select>
+
+
+                    </div>
+
+
+
                 </div>
+
+
             </div>
 
-            <!-- TABLE -->
-            <div class="border rounded-lg overflow-hidden">
 
-                <div class="overflow-auto max-h-[450px]">
 
-                    <table class="w-full text-sm">
 
-                        <thead class="bg-gray-100 sticky top-0 z-10">
-                            <tr>
 
-                                <th class="border px-3 py-2 text-center w-12">
-                                    <input type="checkbox"
-                                        id="checkAllPO">
-                                </th>
+            <!-- TABLE CARD -->
+<!-- TABLE CARD -->
+<div class="
+    bg-white
+    border
+    border-gray-200
+    rounded-2xl
+    overflow-hidden
+    shadow-md
+">
 
-                                <th class="border px-3 py-2 text-left">
-                                    PO No
-                                </th>
 
-                                <th class="border px-3 py-2 text-left">
-                                    PR No
-                                </th>
+    <!-- TABLE HEADER TITLE -->
+    <div class="
+        px-5
+        py-4
+        bg-gradient-to-r
+        from-gray-50
+        to-white
+        border-b
+        flex
+        items-center
+        justify-between">
 
-                                <th class="border px-3 py-2 text-left">
-                                    End User
-                                </th>
+        <div>
 
-                                <th class="border px-3 py-2 text-left">
-                                    Supplier
-                                </th>
+            <h3 class="
+                font-bold
+                text-gray-700
+                flex
+                items-center
+                gap-2">
 
-                                <th class="border px-3 py-2 text-center">
-                                    Status
-                                </th>
+                📦 Purchase Order List
 
-                            </tr>
-                        </thead>
+            </h3>
 
-                        <tbody id="bulkPOBody">
 
-                            <tr>
-                                <td colspan="6"
-                                    class="text-center text-gray-400 py-6">
-                                    No data loaded.
-                                </td>
-                            </tr>
+            <p class="
+                text-xs
+                text-gray-500
+                mt-1">
 
-                        </tbody>
+                Select purchase orders for bulk evaluation.
 
-                    </table>
-
-                </div>
-            </div>
-
-            <!-- FOOTER -->
-            <div class="flex items-center justify-between mt-5">
-
-                <div class="text-sm text-gray-500">
-                    <span id="selectedPOCount">0</span> selected
-                </div>
-
-                <div class="flex gap-2">
-
-                    <button type="button"
-                        onclick="closeBulkAddEvaluateModal()"
-                        class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100">
-
-                        Cancel
-                    </button>
-
-                    <button type="button"
-                        id="submitBulkBtn"
-                        onclick="submitBulkEvaluation()"
-                        class="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-
-                        Add Selected
-                    </button>
-
-                </div>
-
-            </div>
+            </p>
 
         </div>
+
+
+        <div class="
+            text-xs
+            bg-green-100
+            text-green-700
+            px-3
+            py-1
+            rounded-full
+            font-semibold">
+
+            Available PO
+
+        </div>
+
+
     </div>
+
+
+
+
+    <!-- TABLE WRAPPER -->
+    <div class="
+        overflow-auto
+        max-h-[450px]">
+
+
+        <table class="
+            w-full
+            text-sm
+            border-collapse">
+
+
+            <!-- HEADER -->
+            <thead class="sticky top-0 z-20">
+
+
+                <tr class="
+                    bg-gradient-to-r
+                    from-gray-100
+                    to-gray-200
+                    text-gray-600
+                    uppercase
+                    text-xs
+                    tracking-wide">
+
+
+                    <!-- CHECK ALL -->
+                    <th class="
+                        px-5
+                        py-4
+                        border-b
+                        text-center
+                        w-14">
+
+
+                        <input type="checkbox"
+                            id="checkAllPO"
+                            class="
+                            w-5
+                            h-5
+                            rounded
+                            border-gray-300
+                            text-green-600
+                            focus:ring-green-500
+                            cursor-pointer">
+
+
+                    </th>
+
+
+
+                    <th class="
+                        px-5
+                        py-4
+                        border-b
+                        text-left
+                        font-bold">
+
+                        PO No
+
+                    </th>
+
+
+
+                    <th class="
+                        px-5
+                        py-4
+                        border-b
+                        text-left
+                        font-bold">
+
+                        PR No
+
+                    </th>
+
+
+
+                    <th class="
+                        px-5
+                        py-4
+                        border-b
+                        text-left
+                        font-bold">
+
+                        End User
+
+                    </th>
+
+
+
+                    <th class="
+                        px-5
+                        py-4
+                        border-b
+                        text-left
+                        font-bold">
+
+                        Supplier
+
+                    </th>
+
+
+
+                    <th class="
+                        px-5
+                        py-4
+                        border-b
+                        text-center
+                        font-bold">
+
+                        Status
+
+                    </th>
+
+
+                </tr>
+
+
+            </thead>
+
+
+
+
+
+            <!-- BODY -->
+            <tbody id="bulkPOBody"
+                class="
+                divide-y
+                divide-gray-100
+                text-gray-700">
+
+
+                <tr>
+
+                    <td colspan="6"
+                        class="
+                        py-12
+                        text-center
+                        text-gray-400">
+
+
+                        <div class="
+                            flex
+                            flex-col
+                            items-center
+                            gap-2">
+
+
+                            <span class="text-4xl">
+                                📄
+                            </span>
+
+
+                            <span>
+                                No data loaded.
+                            </span>
+
+
+                        </div>
+
+
+                    </td>
+
+
+                </tr>
+
+
+            </tbody>
+
+
+        </table>
+
+
+    </div>
+
+
 </div>
+
+
+
+        </div>
+
+
+
+
+
+        <!-- FOOTER -->
+        <div class="
+            border-t
+            bg-gray-50
+            px-7
+            py-5
+            flex
+            items-center
+            justify-between">
+
+
+            <div class="
+                flex
+                items-center
+                gap-2
+                text-sm
+                text-gray-600">
+
+
+                <span>
+                    Selected:
+                </span>
+
+
+                <span id="selectedPOCount"
+                    class="
+                    bg-green-100
+                    text-green-700
+                    px-3
+                    py-1
+                    rounded-full
+                    font-bold">
+
+                    0
+
+                </span>
+
+
+            </div>
+
+
+
+            <div class="flex gap-3">
+
+
+                <button type="button"
+                    onclick="closeBulkAddEvaluateModal()"
+                    class="
+                    px-5
+                    py-2.5
+                    rounded-xl
+                    border
+                    border-gray-300
+                    text-gray-600
+                    hover:bg-gray-100
+                    transition">
+
+
+                    Cancel
+
+
+                </button>
+
+
+
+                <button type="button"
+                    id="submitBulkBtn"
+                    onclick="submitBulkEvaluation()"
+                    class="
+                    px-6
+                    py-2.5
+                    rounded-xl
+                    bg-green-600
+                    text-white
+                    font-semibold
+                    shadow
+                    hover:bg-green-700
+                    hover:shadow-lg
+                    transition">
+
+
+                    ✓ Add Selected
+
+
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
 
 <script>
 
 function openBulkAddEvaluateModal() {
 
-    // open bulk modal
-    document.getElementById('bulkAddEvaluateModal').classList.remove('hidden');
+    const modal = document.getElementById('bulkAddEvaluateModal');
 
-    // load data
+    // Show modal + enable center alignment
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    // Load purchase orders
     loadBulkPOs();
 
-    // close PO modal
+    // Close PO list modal
     closePOModal_v2();
 }
 
+
 function closeBulkAddEvaluateModal() {
-    document.getElementById('bulkAddEvaluateModal').classList.add('hidden');
+
+    const modal = document.getElementById('bulkAddEvaluateModal');
+
+    // Hide modal
+    modal.classList.add('hidden');
+
+    // Remove flex display
+    modal.classList.remove('flex');
 }
 
 // ==========================
@@ -256,18 +676,110 @@ async function loadBulkPOs() {
             return;
         }
 
-        tbody.innerHTML = data.map(po => `
-            <tr>
-                <td class="text-center border px-2">
-                    <input type="checkbox" class="poCheckbox" value="${po.id}">
-                </td>
-                <td class="border px-2">${po.po_no}</td>
-                <td class="border px-2">${po.pr_no ?? ''}</td>
-                <td class="border px-2">${po.end_user ?? ''}</td>
-                <td class="border px-2">${po.supplier ?? ''}</td>
-                <td class="border px-2 text-center">Available</td>
-            </tr>
-        `).join('');
+tbody.innerHTML = data.map(po => `
+
+<tr class="
+    hover:bg-green-50
+    transition
+    duration-200">
+
+
+    <td class="
+        px-5
+        py-4
+        text-center">
+
+
+        <input type="checkbox"
+            class="
+            poCheckbox
+            w-5
+            h-5
+            rounded
+            border-gray-300
+            text-green-600
+            focus:ring-green-500
+            cursor-pointer"
+            value="${po.id}">
+
+
+    </td>
+
+
+
+    <td class="
+        px-5
+        py-4
+        font-semibold
+        text-gray-800">
+
+        ${po.po_no ?? '-'}
+
+    </td>
+
+
+
+    <td class="
+        px-5
+        py-4">
+
+        ${po.pr_no ?? '-'}
+
+    </td>
+
+
+
+    <td class="
+        px-5
+        py-4">
+
+        ${po.end_user ?? '-'}
+
+    </td>
+
+
+
+    <td class="
+        px-5
+        py-4">
+
+        ${po.supplier ?? '-'}
+
+    </td>
+
+
+
+    <td class="
+        px-5
+        py-4
+        text-center">
+
+
+        <span class="
+            inline-flex
+            items-center
+            px-3
+            py-1
+            rounded-full
+            text-xs
+            font-semibold
+            bg-green-100
+            text-green-700">
+
+
+            ✓ Available
+
+
+        </span>
+
+
+    </td>
+
+
+</tr>
+
+
+`).join('');
 
         updateSelectedCount();
 

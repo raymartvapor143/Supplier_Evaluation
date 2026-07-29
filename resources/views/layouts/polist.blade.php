@@ -1,40 +1,115 @@
 @include('layouts.pobulk')
 
-<div id="poListModal_v2" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+<div id="poListModal_v2"
+    class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
 
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-5xl p-6 max-h-[90vh] overflow-y-auto">
+
+    <div class="bg-white rounded-3xl shadow-2xl
+                w-full max-w-7xl max-h-[92vh]
+                flex flex-col overflow-hidden
+                border border-gray-100">
         @include('layouts.pobulk')
 
         <!-- HEADER -->
-        <div class="flex justify-between items-center mb-2">
-            <h2 class="text-xl font-semibold">Purchase Orders List</h2>
+<!-- STICKY HEADER -->
+<div class="sticky top-0 z-30
+            bg-gradient-to-r from-orange-500 to-orange-600
+            px-6 py-5 text-white">
 
-            <div class="flex space-x-2">
-        @if(auth()->user()->role === 'administrator')
-                        <button onclick="openPOInsertModal_v2()"
-                            class="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm">
-                            + Add PO
-                        </button>
-        @endif
-    <button onclick="openBulkAddEvaluateModal()"
-        class="px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 text-sm">
-        Bulk Add Evaluate
-    </button>
-                <button onclick="closePOModal_v2()" class="text-gray-500 hover:text-red-500 text-xl">
-                    &times;
-                </button>
 
-            </div>
+    <div class="flex items-center justify-between">
+
+
+        <div>
+
+            <h2 class="text-2xl font-bold flex items-center gap-2">
+                📦 Purchase Orders
+            </h2>
+
+            <p class="text-orange-100 text-sm mt-1">
+                Manage, review, and evaluate purchase orders
+            </p>
+
         </div>
 
-        <!-- SEARCH -->
-        <div class="mt-3 mb-4">
-            <input type="text"
-                id="poSearchInput_v2"
-                onkeyup="searchPO_v2()"
-                placeholder="Search PO No, End User, Supplier..."
-                class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400">
+
+
+        <div class="flex items-center gap-2">
+
+
+            @if(auth()->user()->role === 'administrator')
+
+            <button onclick="openPOInsertModal_v2()"
+                class="px-4 py-2
+                bg-white text-orange-600
+                rounded-xl
+                font-semibold text-sm
+                hover:bg-orange-50
+                transition shadow">
+
+                + Add PO
+
+            </button>
+
+            @endif
+
+
+
+            <button onclick="openBulkAddEvaluateModal()"
+                class="px-4 py-2
+                bg-green-500
+                text-white
+                rounded-xl
+                font-semibold text-sm
+                hover:bg-green-600
+                transition shadow">
+
+                Bulk Evaluate
+
+            </button>
+
+
+
+            <button onclick="closePOModal_v2()"
+                class="w-10 h-10
+                rounded-full
+                bg-white/20
+                hover:bg-white/30
+                text-white
+                text-2xl">
+
+                &times;
+
+            </button>
+
+
         </div>
+
+    </div>
+
+
+</div>
+
+<div class="px-6 py-4 bg-gray-50 border-b">
+
+<input type="text"
+    id="poSearchInput_v2"
+    onkeyup="searchPO_v2()"
+    placeholder="Search PO number, PR number, office, supplier..."
+    class="
+    w-full
+    rounded-2xl
+    border-gray-200
+    bg-white
+    px-5 py-3
+    shadow-sm
+    focus:ring-2
+    focus:ring-orange-400
+    focus:border-orange-400
+    outline-none
+    transition">
+
+</div>
 
 
         <!-- Upload PDF Modal -->
@@ -111,10 +186,16 @@ function closeUploadPOModal()
 
 
         <!-- TABLE -->
-        <div class="overflow-x-auto">
-            <table class="w-full border border-gray-200 rounded-lg overflow-hidden">
+        <div class="flex-1 overflow-y-auto overflow-x-auto">
+            <table class="w-full text-sm">
 
-                <thead class="bg-gray-100 text-left">
+<thead class="
+bg-gray-50
+text-gray-600
+uppercase
+text-xs
+tracking-wider
+sticky top-0 z-20">
                     <tr>
                         <th class="p-3 border">PO No</th>
                         <th class="p-3 border">PR No</th>
@@ -126,16 +207,22 @@ function closeUploadPOModal()
                     </tr>
                 </thead>
 
-                <tbody>
-                @foreach($pos as $po)
-                <tr class="hover:bg-gray-50 po-row-v2">
+<tbody id="poTableBody_v2">
+@foreach($pos as $po)
+<tr class="
+border-b
+hover:bg-orange-50/50
+transition
+duration-200
+po-row-v2
+{{ $po->pdf_po ? 'has-pdf bg-green-50/30' : 'no-pdf' }}">
 
-                    <td class="p-3 border">{{ $po->po_no }}</td>
-                    <td class="p-3 border">{{ $po->pr_no ?? 'N/A' }}</td>
-                    <td class="p-3 border">{{ $po->end_user }}</td>
-                    <td class="p-3 border">{{ $po->supplier }}</td>
+                    <td class="px-5 py-4 text-gray-700">{{ $po->po_no }}</td>
+                    <td class="px-5 py-4 text-gray-700">{{ $po->pr_no ?? 'N/A' }}</td>
+                    <td class="px-5 py-4 text-gray-700">{{ $po->end_user }}</td>
+                    <td class="px-5 py-4 text-gray-700">{{ $po->supplier }}</td>
 
-                    <td class="p-3 border">
+                    <td class="px-5 py-4 text-gray-700">
                         @if($po->pdf_po)
                             <a href="{{ route('po.view.pdf', $po->id) }}"
                                target="_blank"
@@ -147,24 +234,36 @@ function closeUploadPOModal()
                         @endif
                     </td>
 
-                    <td class="p-3 border">
+                    <td class="px-5 py-4 text-gray-700">
                         @php
                             $status = $po->status ?? 'Pending';
                         @endphp
 
-                        <span class="px-2 py-1 text-xs rounded-full
-                            @if($status == 'Added')
-                                bg-blue-100 text-blue-700
-                            @elseif($status == 'Approved')
-                                bg-green-100 text-green-700
-                            @elseif($status == 'Cancelled')
-                                bg-red-100 text-red-700
-                            @else
-                                bg-yellow-100 text-yellow-700
-                            @endif
-                        ">
-                            {{ $status }}
-                        </span>
+<span class="
+inline-flex items-center
+px-3 py-1
+rounded-full
+text-xs
+font-semibold
+
+@if($status == 'Added')
+bg-blue-100 text-blue-700
+
+@elseif($status == 'Approved')
+bg-green-100 text-green-700
+
+@elseif($status == 'Cancelled')
+bg-red-100 text-red-700
+
+@else
+bg-yellow-100 text-yellow-700
+
+@endif
+">
+
+{{ $status }}
+
+</span>
                     </td>
 
                 <td class="p-3 border relative">
@@ -183,12 +282,35 @@ function closeUploadPOModal()
 
                         <div class="po-action-wrapper-v2 relative inline-block text-left">
 
-                            <button onclick="togglePOAction_v2(this)"
-                                class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 text-sm">
-                                Action ▼
-                            </button>
+<button onclick="togglePOAction_v2(this)"
+class="
+px-4 py-2
+rounded-xl
+bg-gray-100
+hover:bg-orange-100
+text-gray-700
+text-sm
+font-medium
+transition">
 
-                            <div class="po-action-menu-v2 hidden absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-50">
+⋮ Actions
+
+</button>
+
+                            <div class="
+po-action-menu-v2
+hidden
+absolute
+right-0
+mt-2
+w-48
+bg-white
+rounded-2xl
+shadow-xl
+border
+border-gray-100
+overflow-hidden
+z-50">
 
                                 {{-- 🚫 EVALUATE RULE --}}
                                 @if($status !== 'Added' && $status !== 'Cancelled')
@@ -658,6 +780,44 @@ function confirmDeletePO(event, form) {
     });
 }
 
+
+// ===============================
+// SORT PO WITH PDF FIRST
+// ===============================
+function sortPOByPDF_v2() {
+
+    const tbody = document.getElementById('poTableBody_v2');
+
+    if (!tbody) return;
+
+    let rows = Array.from(
+        tbody.querySelectorAll('.po-row-v2')
+    );
+
+    rows.sort((a, b) => {
+
+        let aHasPDF = a.classList.contains('has-pdf');
+        let bHasPDF = b.classList.contains('has-pdf');
+
+        // PDF rows first
+        if (aHasPDF && !bHasPDF) return -1;
+        if (!aHasPDF && bHasPDF) return 1;
+
+        return 0;
+    });
+
+
+    rows.forEach(row => {
+        tbody.appendChild(row);
+    });
+
+}
+
+
+// Run when modal opens
+document.addEventListener('DOMContentLoaded', function () {
+    sortPOByPDF_v2();
+});
 
 </script>
 
