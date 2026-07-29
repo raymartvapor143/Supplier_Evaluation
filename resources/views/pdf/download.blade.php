@@ -237,15 +237,28 @@ use App\Models\User;
         $headApproval = $evaluation->digitalApprovals
             ->firstWhere('role', 'Head');
 
-        /*
-        |--------------------------------------------------------------------------
-        | REPRESENTATIVE STAFF DIGITAL APPROVAL
-        | (Database role = presentative_staff)
-        |--------------------------------------------------------------------------
-        */
+/*
+|--------------------------------------------------------------------------
+| REPRESENTATIVE STAFF DIGITAL APPROVAL
+|--------------------------------------------------------------------------
+*/
 
-        $representativeApproval = $evaluation->digitalApprovals
-            ->firstWhere('role', 'representative_staff');
+$representativeApproval = $evaluation->digitalApprovals
+    ->firstWhere('role', 'presentative_staff'); // Change this if your DB stores a different value
+
+$repSig = null;
+
+if (
+    $representativeApproval &&
+    $representativeApproval->signer &&
+    $representativeApproval->signer->signature
+) {
+    $path = storage_path('app/private/' . $representativeApproval->signer->signature);
+
+    if (file_exists($path)) {
+        $repSig = $path;
+    }
+}
 
         /*
         |--------------------------------------------------------------------------
@@ -357,10 +370,10 @@ use App\Models\User;
                 </div>
 
                 @if($preparedBy && $preparedBy->signer && $preparedBy->signer->updated_at)
-                    <div class="sig-note">
-                        Signed:
-                        {{ \Carbon\Carbon::parse($preparedBy->signer->updated_at)->format('F d, Y h:i A') }}
-                    </div>
+<div class="sig-note">
+    Signed:
+    {{ $preparedBy->created_at->format('F d, Y h:i A') }}
+</div>
                 @endif
             </td>
 
@@ -388,57 +401,54 @@ use App\Models\User;
                 <div class="sig-note">
                     {{ $headNote }}
                 </div>
+@if($headApproval && $headApproval->signer && $headApproval->signer->updated_at)
+<div class="sig-note">
+    Signed:
+    {{ optional($headApproval->created_at)->format('F d, Y h:i A') }}
+</div>
+ @endif
 
             </td>
 
             <!-- ================= REPRESENTATIVE (OPTIONAL COLUMN) ================= -->
-            @if($representativeApproval)
+@if($representativeApproval)
 
-                <td class="sig-card">
+<td class="sig-card">
 
-                    @php
-                        $repSig = null;
+    <div class="sig-title-tag" style="color:#059669;">
+        REPRESENTATIVE STAFF
+    </div>
 
-                        if (
-                            $representativeApproval->signer &&
-                            $representativeApproval->signer->signature
-                        ) {
-                            $path = storage_path('app/private/' . $representativeApproval->signer->signature);
+    <div class="sig-image">
+        @if($repSig)
+            <img src="{{ $repSig }}">
+        @endif
+    </div>
 
-                            if (file_exists($path)) {
-                                $repSig = $path;
-                            }
-                        }
-                    @endphp
+    <div class="sig-line"></div>
 
-                    <div class="sig-title-tag" style="color:#059669;">
-                        REPRESENTATIVE STAFF
-                    </div>
+    <div class="sig-name">
+        {{ $representativeApproval->full_name ?? '-' }}
+    </div>
 
-                    <div class="sig-image">
-                        @if($repSig)
-                            <img src="{{ $repSig }}">
-                        @endif
-                    </div>
+    <div class="sig-role">
+        {{ $representativeApproval->designation ?? '-' }}
+    </div>
 
-                    <div class="sig-line"></div>
+    <div class="sig-note">
+        Electronically signed on behalf of the Office Head
+    </div>
 
-                    <div class="sig-name">
-                        {{ $representativeApproval->full_name }}
-                    </div>
+    @if($representativeApproval->created_at)
+        <div class="sig-note">
+            Signed:
+            {{ $representativeApproval->created_at->format('F d, Y h:i A') }}
+        </div>
+    @endif
 
-                    <div class="sig-role">
-                        {{ $representativeApproval->designation }}
-                    </div>
+</td>
 
-                    <div class="sig-note">
-                        Signed on behalf of Office Head<br>
-                        {{ optional($representativeApproval->created_at)->format('F d, Y h:i A') }}
-                    </div>
-
-                </td>
-
-            @endif
+@endif
 
         </tr>
 

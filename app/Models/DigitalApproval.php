@@ -18,13 +18,15 @@ class DigitalApproval extends Model
         'full_name',
         'designation',
         'role',
-        // 'image',
     ];
 
     /**
-     * Append computed attributes
+     * Append computed attributes.
      */
-    protected $appends = ['image_url', 'signature_url'];
+    protected $appends = [
+        'image_url',
+        'signature_url',
+    ];
 
     /**
      * ===============================
@@ -32,32 +34,23 @@ class DigitalApproval extends Model
      * ===============================
      */
 
-    public function getSignatureUrlAttribute()
-{
-    if (!$this->signer || !$this->signer->signature) {
-        return null;
-    }
-
-    return route('signature', $this->signer->id);
-}
-
-
-    // Each digital approval belongs to an evaluation
+    // Approval belongs to an evaluation
     public function evaluation()
     {
         return $this->belongsTo(Evaluation::class);
     }
 
-    // Each digital approval belongs to an authorize record
+    // Approval belongs to an authorize record
     public function authorize()
     {
         return $this->belongsTo(Authorize::class);
     }
 
-public function signer()
-{
-    return $this->belongsTo(User::class, 'signed_by');
-}
+    // User who signed the approval
+    public function signer()
+    {
+        return $this->belongsTo(User::class, 'signed_by');
+    }
 
     /**
      * ===============================
@@ -65,7 +58,15 @@ public function signer()
      * ===============================
      */
 
-    // Convert stored image path to full public URL
+    public function getSignatureUrlAttribute()
+    {
+        if (!$this->signer || !$this->signer->signature) {
+            return null;
+        }
+
+        return route('signature', $this->signer->id);
+    }
+
     public function getImageUrlAttribute()
     {
         if (!$this->image) {
