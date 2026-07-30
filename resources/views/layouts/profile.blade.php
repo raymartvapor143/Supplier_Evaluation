@@ -54,7 +54,7 @@
                     </div>
 
                     <!-- DRAW / REDRAW BUTTON -->
-                    <button id="redrawBtn"
+                    <button id="redrawBtn" disabled hidden
                             type="button"
                             class="hidden absolute -bottom-3 left-1/2 -translate-x-1/2
                                    px-4 py-2 rounded-full
