@@ -12,6 +12,7 @@ use App\Http\Controllers\PgsoController;
 use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ForgotPasswordController;
 use App\Models\Evaluation;
 use App\Models\Office;
 use App\Models\Pdf;
@@ -20,6 +21,22 @@ use App\Models\Requests;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
+
+
+Route::post(
+    '/forgot-password',
+    [ForgotPasswordController::class,'send']
+);
+
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])
+    ->name('password.update');
+
+
+Route::get('/reset-password/{token}', function ($token) {
+    return view('auth.reset-password', [
+        'token' => $token
+    ]);
+})->name('password.reset');
 
 /*
 |--------------------------------------------------------------------------
@@ -85,6 +102,7 @@ Route::get('/login', function () {
 
     return app(App\Http\Controllers\AuthController::class)->login();
 })->name('auth.login');
+
 
 
 Route::get('/Privacy', [PrivacyController::class, 'privacy'])->name('privacy.privacy');

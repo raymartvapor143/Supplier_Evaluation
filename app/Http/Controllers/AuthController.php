@@ -10,10 +10,15 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password;
+
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use App\Models\ActivityLog;
+
+use Illuminate\Validation\Rules\Password as PasswordRule;
+use Illuminate\Support\Facades\Password;
+
+
 
 class AuthController extends Controller
 {
@@ -41,7 +46,7 @@ public function register(Request $request)
             'password' => [
                 'required',
                 'confirmed',
-                Password::min(8)
+                PasswordRule::min(8)
             ],
 
             'signature' => [
@@ -385,4 +390,96 @@ public function logout(Request $request)
     return redirect('/login');
 }
 
+
+
+
+
+
+
+
+
+
+public function forgotPassword(Request $request)
+{
+    $request->validate([
+        'email' => ['required', 'email']
+    ]);
+
+
+    $user = User::where('email', $request->email)->first();
+
+
+    if (!$user) {
+
+        return response()->json([
+            'message' => 'No account was found with that email address.'
+        ], 404);
+
+    }
+
+
+    $status = Password::sendResetLink(
+        $request->only('email')
+    );
+
+
+    if ($status === Password::RESET_LINK_SENT) {
+
+        return response()->json([
+            'message' => 'A password reset link has been sent to your email.'
+        ]);
+
+    }
+
+
+    return response()->json([
+        'message' => 'Unable to send password reset link.'
+    ], 500);
+}
+
+
+
+public function resetPassword(Request $request)
+{
+    $request->validate([
+        'token' => 'required',
+        'email' => 'required|email',
+        'password' => [
+            'required',
+            'confirmed',
+            'min:8'
+        ],
+    ]);
+
+
+    $status = Password::reset(
+        $request->only(
+            'email',
+            'password',
+            'password_confirmation',
+            'token'
+        ),
+
+        function ($user, $password) {
+
+            $user->forceFill([
+                'password' => Hash::make($password)
+            ])->save();
+
+        }
+    );
+
+
+    if ($status === Password::PASSWORD_RESET) {
+
+        return redirect('/login')
+            ->with('success', 'Your password has been reset successfully.');
+
+    }
+
+
+    return back()->withErrors([
+        'email' => 'Invalid reset token or email address.'
+    ]);
+}
 }

@@ -36,6 +36,35 @@
 
 <script src="{{asset('script/block.js')}}"></script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    @if(session('success'))
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Password Reset Successful',
+            text: "{{ session('success') }}",
+            confirmButtonText: 'Continue',
+            confirmButtonColor: '#2563eb'
+        });
+
+    @endif
+
+
+    @if(session('error'))
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Reset Failed',
+            text: "{{ session('error') }}",
+            confirmButtonText: 'OK'
+        });
+
+    @endif
+
+});
+</script>
 
 <body class="bg-gray-100">
 
@@ -96,28 +125,61 @@
           </div>
 
           <!-- Password -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-              required
-            />
-          </div>
+<!-- Password -->
+<div class="relative">
+    <label class="block text-sm font-medium text-gray-700 mb-1">
+        Password
+    </label>
+
+    <input
+        id="loginPassword"
+        type="password"
+        placeholder="••••••••"
+        class="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+        required
+    />
+
+    <button
+        type="button"
+        onclick="togglePassword('loginPassword', this)"
+        class="absolute right-3 top-[42px] text-gray-500 hover:text-gray-700 transition">
+
+        <!-- Default Eye Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="h-5 w-5"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor">
+
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5
+                     c4.477 0 8.268 2.943 9.542 7
+                     -1.274 4.057-5.065 7-9.542 7
+                     -4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+
+    </button>
+</div>
 
           <!-- Remember & Forgot -->
-          <!-- <div class="flex items-center justify-between text-sm">
+          <div class="flex items-center justify-between text-sm">
             <label class="flex items-center gap-2">
-              <input type="checkbox" class="rounded text-blue-600">
-              Remember me
+              <input type="checkbox" hidden class="rounded text-blue-600">
+              {{-- Remember me --}}
             </label>
-            <a href="#" class="text-blue-600 hover:underline">
-              Forgot password?
-            </a>
-          </div> -->
+<a href="#"
+   onclick="showForgotPasswordModal(event)"
+   class="text-blue-600 hover:underline">
+    Forgot password?
+</a>
+          </div>
 
           <!-- Button -->
         <button
@@ -864,6 +926,106 @@ if (error.response) {
 
 </div>
 
+
+
+<script>
+async function showForgotPasswordModal(event) {
+
+    event.preventDefault();
+
+    const { value: email } = await Swal.fire({
+        title: 'Forgot Password',
+        html: `
+            <p class="text-gray-600 mb-4">
+                Enter your registered email address.
+            </p>
+
+            <input
+                id="forgotEmail"
+                type="email"
+                class="swal2-input"
+                placeholder="you@example.com"
+                autocomplete="email">
+        `,
+        confirmButtonText: 'Send Reset Link',
+        showCancelButton: true,
+        cancelButtonText: 'Cancel',
+        focusConfirm: false,
+
+        preConfirm: () => {
+
+            const email =
+                document.getElementById('forgotEmail').value.trim();
+
+            if (!email) {
+
+                Swal.showValidationMessage(
+                    'Please enter your email address.'
+                );
+
+                return false;
+            }
+
+            const emailPattern =
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!emailPattern.test(email)) {
+
+                Swal.showValidationMessage(
+                    'Please enter a valid email address.'
+                );
+
+                return false;
+            }
+
+            return email;
+        }
+    });
+
+    if (!email) return;
+
+    try {
+
+        Swal.fire({
+            title: 'Sending...',
+            text: 'Please wait.',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        // Change this route to your Laravel endpoint
+        const response = await axios.post('/forgot-password', {
+            email: email
+        });
+
+        Swal.close();
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Email Sent',
+            text: response.data.message ||
+                  'Password reset instructions have been sent.'
+        });
+
+    } catch (error) {
+
+        Swal.close();
+
+        Swal.fire({
+            icon: 'error',
+            title: 'Request Failed',
+            text:
+                error.response?.data?.message ||
+                'Unable to process your request.'
+        });
+
+    }
+}
+</script>
+
+
+
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -1243,22 +1405,63 @@ function closeModal() {
 // PASSWORD TOGGLE
 // =====================
 function togglePassword(id, btn) {
-  const input = document.getElementById(id);
-  const isPassword = input.type === 'password';
 
-  input.type = isPassword ? 'text' : 'password';
+    const input = document.getElementById(id);
 
-  btn.innerHTML = isPassword
-    ? `
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.269-2.944-9.543-7a10.05 10.05 0 011.659-3.04m3.09-2.503A9.953 9.953 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.96 9.96 0 01-1.232 2.675M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18"/>
-      </svg>`
-    : `
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-      </svg>`;
+    const showIcon = `
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="h-5 w-5"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor">
+
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5
+                     c4.477 0 8.268 2.943 9.542 7
+                     -1.274 4.057-5.065 7-9.542 7
+                     -4.477 0-8.268-2.943-9.542-7z"/>
+        </svg>
+    `;
+
+    const hideIcon = `
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="h-5 w-5"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke="currentColor">
+
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 3l18 18"/>
+
+            <path stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M10.477 10.489A3 3 0 0013.5 13.5
+                     M9.88 5.09A9.953 9.953 0 0112 5
+                     c4.478 0 8.268 2.943 9.543 7
+                     a9.97 9.97 0 01-4.132 5.411
+                     M6.228 6.228A9.956 9.956 0 002.458 12
+                     c1.274 4.057 5.065 7 9.542 7
+                     a9.95 9.95 0 005.772-1.772"/>
+        </svg>
+    `;
+
+    if (input.type === "password") {
+        input.type = "text";
+        btn.innerHTML = hideIcon;
+    } else {
+        input.type = "password";
+        btn.innerHTML = showIcon;
+    }
 }
 
 </script>
