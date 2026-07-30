@@ -122,7 +122,11 @@ function renderTable(status) {
         if (!isNaN(score) && score < 60) scoreClass = "bg-red-100 text-red-700 font-bold";
         else if (score === 60) scoreClass = "bg-orange-100 text-orange-700 font-bold";
 
-let actionOptions = `<option disabled selected class="text-black bg-white">Select</option>`;
+let actionOptions = `
+    <option value="" selected class="text-black bg-white">
+        Select
+    </option>
+`;
 
 const optionClass = `class="text-black bg-white"`; // reusable
 
@@ -790,12 +794,13 @@ else if (action === "delete") {
     }
 }
 
-    } catch (err) {
-        console.error(err);
-        alert("Action failed.");
-    }setTimeout(() => {
-    e.target.value = "";
-}, 50);
+} catch (err) {
+    console.error(err);
+    alert("Action failed.");
+} finally {
+    // Always return the dropdown to "Select"
+    e.target.selectedIndex = 0;
+}
 });
     /* ================= EVENTS ================= */
 
