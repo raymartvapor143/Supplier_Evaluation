@@ -2,7 +2,7 @@
 <div id="viewEvaluationModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
   <div class="flex items-center justify-center min-h-screen p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-screen overflow-y-auto border border-gray-100">
-      <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 rounded-t-xl">
+      <div class="sticky top-0 z-50 bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 rounded-t-xl">
         <div class="flex items-center justify-between">
           <div>
             <h3 class="text-xl font-bold text-white">SUPPLIER'S EVALUATION FORM</h3>
