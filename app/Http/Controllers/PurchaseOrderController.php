@@ -207,43 +207,37 @@ public function update(Request $request, $id)
 {
     $po = PurchaseOrder::findOrFail($id);
 
-
     $request->merge([
         'po_no' => trim($request->po_no),
-        'pr_no' => $request->pr_no ? trim($request->pr_no) : null,
+        'pr_no' => $request->filled('pr_no')
+            ? trim($request->pr_no)
+            : null,
     ]);
 
-    // Detect changes
+    // Check if anything changed
     $hasChanges =
         $po->po_no !== $request->po_no ||
         $po->pr_no !== $request->pr_no ||
         $po->supplier !== $request->supplier ||
         $po->end_user !== $request->end_user ||
         $po->status !== $request->status ||
-        $request->hasFile('pdf_po');
+        $request->hasFile('pdf_po') ||
+        $request->remove_pdf == "1";
 
     if (!$hasChanges) {
         return back()->with('po_error_update', 'No changes detected.');
     }
-
 
     $request->validate([
         'po_no' => [
             'required',
             Rule::unique('purchase_orders', 'po_no')->ignore($id),
         ],
-
-
-        'pr_no' => [
-            'nullable',
-            'string',
-            'max:255',
-        ],
-
-        'supplier' => 'required|string',
-        'end_user' => 'required|string',
+        'pr_no'    => 'nullable|string|max:255',
+        'supplier' => 'required|string|max:255',
+        'end_user' => 'required|string|max:255',
         'status'   => 'required|in:Pending,Added,Approved,Cancelled',
-        'pdf_po'   => 'nullable|mimes:pdf|max:10240',
+        'pdf_po'   => 'nullable|file|mimes:pdf|max:15240',
     ], [
         'po_no.unique' => 'This PO Number already exists.',
     ]);
@@ -253,45 +247,87 @@ public function update(Request $request, $id)
     try {
 
         $oldStatus = $po->status;
+
         $pdfUpdated = false;
+        $pdfRemoved = false;
 
         // Update fields
-        $po->po_no    = $request->po_no;
-        $po->pr_no    = $request->pr_no;
+        $po->po_no = $request->po_no;
+        $po->pr_no = $request->pr_no;
         $po->supplier = $request->supplier;
         $po->end_user = $request->end_user;
-        $po->status   = $request->status;
+        $po->status = $request->status;
 
-        // PDF replace
+        /*
+        |--------------------------------------------------------------------------
+        | Remove Existing PDF
+        |--------------------------------------------------------------------------
+        */
+        if ($request->remove_pdf == "1") {
+
+            if ($po->pdf_po && Storage::disk('local')->exists($po->pdf_po)) {
+                Storage::disk('local')->delete($po->pdf_po);
+            }
+
+            $po->pdf_po = null;
+            $pdfRemoved = true;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Upload / Replace PDF
+        |--------------------------------------------------------------------------
+        */
         if ($request->hasFile('pdf_po')) {
 
-            if ($po->pdf_po) {
+            // Delete previous PDF if it still exists
+            if ($po->pdf_po && Storage::disk('local')->exists($po->pdf_po)) {
                 Storage::disk('local')->delete($po->pdf_po);
             }
 
             $file = $request->file('pdf_po');
 
-            $filename = time() . '_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', $po->po_no) . '.pdf';
+            $filename = time() . '_' .
+                preg_replace('/[^A-Za-z0-9_-]/', '_', $po->po_no) .
+                '.pdf';
 
-            $path = $file->storeAs('private/po_pdf', $filename, 'local');
+            $path = $file->storeAs(
+                'private/po_pdf',
+                $filename,
+                'local'
+            );
 
             $po->pdf_po = $path;
             $pdfUpdated = true;
+            $pdfRemoved = false;
         }
 
         $po->save();
 
-        // Logging
-        $changes = "Status: {$oldStatus} → {$po->status}";
+        /*
+        |--------------------------------------------------------------------------
+        | Activity Log
+        |--------------------------------------------------------------------------
+        */
+        $changes = [];
+
+        if ($oldStatus !== $po->status) {
+            $changes[] = "Status: {$oldStatus} → {$po->status}";
+        }
+
         if ($pdfUpdated) {
-            $changes .= " | PDF replaced";
+            $changes[] = "PDF replaced";
+        } elseif ($pdfRemoved) {
+            $changes[] = "PDF removed";
         }
 
         ActivityLog::create([
             'user_id'     => auth()->id(),
             'role'        => auth()->user()->role,
             'activity'    => 'Update Purchase Order',
-            'description' => "Updated PO {$po->po_no} ({$changes})",
+            'description' => empty($changes)
+                ? "Updated PO {$po->po_no}"
+                : "Updated PO {$po->po_no} (" . implode(', ', $changes) . ")",
             'status'      => 'success',
             'ip_address'  => $request->ip(),
             'user_agent'  => $request->userAgent(),
@@ -299,7 +335,10 @@ public function update(Request $request, $id)
 
         DB::commit();
 
-        return back()->with('po_updated', 'Purchase Order updated successfully.');
+        return back()->with(
+            'po_updated',
+            'Purchase Order updated successfully.'
+        );
 
     } catch (\Throwable $e) {
 
@@ -307,9 +346,13 @@ public function update(Request $request, $id)
 
         Log::error('PO UPDATE FAILED', [
             'message' => $e->getMessage(),
+            'trace'   => $e->getTraceAsString(),
         ]);
 
-        return back()->with('po_error_update', 'Update failed: ' . $e->getMessage());
+        return back()->with(
+            'po_error_update',
+            'Update failed: ' . $e->getMessage()
+        );
     }
 }
 

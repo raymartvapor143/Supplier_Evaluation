@@ -33,6 +33,10 @@
 
             @csrf
             @method('PUT')
+<input type="hidden"
+       name="remove_pdf"
+       id="remove_pdf_v2"
+       value="0">
 
                 @if ($errors->any())
                     <div class="mb-4 rounded-lg bg-red-100 p-3 text-sm text-red-700">
@@ -205,17 +209,14 @@ function enablePOEdit_v2()
 
     // Show Remove button if PDF exists
     const removeBtn = document.getElementById('removePdfBtn');
+
     if (removeBtn) {
         removeBtn.classList.remove('hidden');
     }
 
-    // If no PDF exists, show upload section
-    const pdfContainer = document.getElementById('pdf_container_v2');
-
-    if (pdfContainer.innerText.includes('No PDF uploaded')) {
-        document.getElementById('pdf_upload_section_v2')
-            .classList.remove('hidden');
-    }
+    // Always allow selecting a new PDF
+    document.getElementById('pdf_upload_section_v2')
+        .classList.remove('hidden');
 }
 
 
@@ -226,10 +227,16 @@ function enablePOEdit_v2()
  */
 function removePdf()
 {
-    document.getElementById('pdf_container_v2').innerHTML = '';
+    document.getElementById('pdf_container_v2').innerHTML = `
+        <span class="text-red-500 text-sm">
+            PDF will be removed after clicking Update.
+        </span>
+    `;
 
     document.getElementById('pdf_upload_section_v2')
         .classList.remove('hidden');
+
+    document.getElementById('remove_pdf_v2').value = "1";
 }
 
 /**
@@ -237,10 +244,12 @@ function removePdf()
  */
 function cancelReplacePdf()
 {
+    document.getElementById('pdf_po_v2').value = '';
+
     document.getElementById('pdf_upload_section_v2')
         .classList.add('hidden');
 
-    document.getElementById('pdf_po_v2').value = '';
+    document.getElementById('remove_pdf_v2').value = "0";
 }
 
 function openPOEditModal_v2(
@@ -276,33 +285,35 @@ if (pdfUrl) {
     pdfContainer.innerHTML = `
         <div class="flex items-center gap-2">
 
-            <a href="${pdfUrl}" target="_blank"
+            <a href="${pdfUrl}"
+               target="_blank"
                class="inline-flex items-center rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white hover:bg-red-600">
                 📄 View PDF
             </a>
 
-            <button type="button"
-                    id="removePdfBtn"
-                    onclick="removePdf()"
-                    class="hidden h-8 w-8 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200">
+            <button
+                type="button"
+                id="removePdfBtn"
+                onclick="removePdf()"
+                class="hidden flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200">
                 ✕
             </button>
 
         </div>
     `;
 
-    // Always hide upload while viewing
-    uploadSection.classList.add('hidden');
-
 } else {
 
     pdfContainer.innerHTML = `
-        <span class="text-gray-500 text-sm">No PDF uploaded</span>
+        <span class="text-gray-500 text-sm">
+            No PDF uploaded
+        </span>
     `;
-
-    // Keep upload hidden in View mode
-    uploadSection.classList.add('hidden');
 }
+
+uploadSection.classList.add('hidden');
+document.getElementById('remove_pdf_v2').value = "0";
+document.getElementById('pdf_po_v2').value = "";
 
     const modal = document.getElementById('poEditModal_v2');
 
