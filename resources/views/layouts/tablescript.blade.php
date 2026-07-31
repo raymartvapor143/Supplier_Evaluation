@@ -110,7 +110,7 @@ function renderTable(status) {
 
     if (filtered.length === 0) {
         tableBody.innerHTML = `
-            <tr>
+            <tr id="empty-${status}">
                 <td colspan="7" class="px-4 py-10 text-center text-gray-400">
                     <div class="flex flex-col items-center justify-center space-y-2">
                         <i class="ri-inbox-line text-3xl text-gray-300"></i>
@@ -119,8 +119,15 @@ function renderTable(status) {
                 </td>
             </tr>
         `;
+        rowCache[status].clear();
         if (paginationContainers[status]) paginationContainers[status].innerHTML = '';
         return;
+    }
+
+    // Clean up empty state row if present
+    const emptyRow = document.getElementById(`empty-${status}`);
+    if (emptyRow) {
+        emptyRow.remove();
     }
 
     const { page, perPage } = pagination[status];
