@@ -122,6 +122,78 @@
 
  <div class="flex flex-col gap-6 w-full">
 
+  <!-- Semester Evaluation Score by Supplier -->
+  <div class="bg-white p-4 rounded-lg shadow w-full">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+      <div>
+        <h2 id="semesterChartTitle" class="text-lg font-semibold text-gray-900">
+          Supplier Evaluation Score by Semester
+        </h2>
+        <p class="text-xs text-gray-500">Comparison of 1st Semester (Jan–Jun) vs 2nd Semester (Jul–Dec) average scores</p>
+      </div>
+
+      <!-- Filters & Download PDF -->
+      <div class="flex flex-wrap gap-2 w-full sm:w-auto items-center">
+        <select id="departmentSelectSemesterChart" class="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option disabled selected>Loading departments...</option>
+        </select>
+        <select id="yearSelectSemesterChart" class="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option disabled selected>Select Year</option>
+        </select>
+        <button type="button" onclick="downloadSemesterPdf()" class="flex items-center bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-2 rounded-lg shadow-sm transition-colors cursor-pointer">
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Download PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Chart Canvas -->
+    <div class="relative h-[400px] w-full mb-6">
+      <canvas id="semesterChartCanvas" class="w-full h-full"></canvas>
+    </div>
+
+    <!-- Semester Summary Table -->
+    <div class="mt-4 overflow-x-auto border border-gray-200 rounded-lg">
+      <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <h3 class="text-sm font-semibold text-gray-700">Semester Score Breakdown</h3>
+
+        <!-- Search Input -->
+        <div class="relative w-full sm:w-64">
+          <input id="semester-table-search" type="text" placeholder="Search supplier..."
+                 class="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs">
+          <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs">
+            <i class="ri-search-line"></i>
+          </div>
+        </div>
+      </div>
+
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Supplier</th>
+            <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">1st Semester (Jan - Jun)</th>
+            <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">2nd Semester (Jul - Dec)</th>
+            <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Overall Average</th>
+            <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Rating Status</th>
+          </tr>
+        </thead>
+        <tbody id="semesterTableBody" class="bg-white divide-y divide-gray-200">
+          <tr>
+            <td colspan="5" class="text-center py-4 text-gray-500 text-sm">Loading semester evaluation data...</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination Container -->
+      <div id="semesterTablePagination" class="flex justify-center items-center py-2.5 bg-gray-50 border-t border-gray-200 space-x-1.5"></div>
+    </div>
+
+  </div>
+
   <!-- Line Chart -->
   <div class="bg-white p-4 rounded-lg shadow w-full">
 
@@ -631,6 +703,7 @@ toggleAnalytics.addEventListener('click', () => {
   setTimeout(() => {
     initBarChart();   // previously renderCharts()
     initLineChart();  // line chart
+    initSemesterChart(); // semester chart & breakdown table
   }, 300);
 });
 

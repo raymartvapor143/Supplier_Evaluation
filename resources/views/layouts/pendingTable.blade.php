@@ -29,92 +29,54 @@
 
  <div id="pendingTable" class="tab-content">
 
-    <div class="overflow-x-auto rounded-lg">
+    <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
 
-        <table class="min-w-[900px] w-full divide-y divide-orange-200">
+        <table class="min-w-[900px] w-full divide-y divide-gray-200">
 
-            <thead class="bg-orange-100/70 sticky top-0 z-10">
+            <thead class="bg-slate-50 sticky top-0 z-10 border-b border-gray-200">
                 <tr>
                     <th class="table-head">Purchase Order</th>
                     <th class="table-head">Company Name</th>
-                    <th class="table-head">Evaluator</th>
-                    <th class="table-head">Average Score</th>
-                    <th class="table-head">Covered Period</th>
-                    <th class="table-head">Evaluation Date</th>
-                    <th class="table-head">Actions</th>
+                    <th class="table-head">Evaluator / Office</th>
+                    <th class="table-head text-center">Average Score</th>
+                    <th class="table-head text-center">Covered Period</th>
+                    <th class="table-head text-center">Evaluation Date</th>
+                    <th class="table-head text-center">Actions</th>
                 </tr>
             </thead>
 
             <tbody
                 id="pendingTableBody"
-                class="bg-white/80 divide-y divide-orange-100">
+                class="bg-white divide-y divide-gray-100">
             </tbody>
 
         </table>
 
     </div>
 
-
-
-<div id="pendingPagination"
-     class="flex items-center justify-center gap-1 mt-5 px-2 select-none">
-</div>
+    <div id="pendingPagination"
+         class="flex items-center justify-center gap-1 mt-4 px-2 select-none">
+    </div>
 
 </div>
+
 <style>
-
-.pagination-btn {
-    min-width: 36px;
-    height: 36px;
-    padding: 0 10px;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.pagination-btn:hover:not(.active):not(.disabled) {
-    background: #fed7aa; /* orange-200 */
-    transform: translateY(-1px);
-}
-
-.pagination-btn.active {
-    background: #f97316; /* orange-500 */
-    color: white;
-    box-shadow: 0 4px 10px rgba(249,115,22,0.25);
-}
-
-.pagination-btn.disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
-
 .table-head {
     padding: 12px 16px;
     text-align: left;
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    color: #6b7280;
+    letter-spacing: 0.05em;
+    color: #475569;
     white-space: nowrap;
 }
 
-#pendingTable table {
-    width: 100%;
-    table-layout: auto;
-}
-
 #pendingTable tbody tr {
-    transition: all 0.2s ease;
-    will-change: transform, opacity;
-    contain: layout style paint;
+    transition: all 0.15s ease;
 }
 
 #pendingTable tbody tr:hover {
-    transform: translateY(-1px);
+    background-color: #f8fafc;
 }
 </style>

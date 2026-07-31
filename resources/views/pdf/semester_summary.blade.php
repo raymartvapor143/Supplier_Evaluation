@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Supplier Evaluation Summary Report</title>
+    <title>Supplier Semester Evaluation Summary Report</title>
 
     <style>
         @page {
@@ -78,9 +78,16 @@
             font-size: 15px;
             font-weight: bold;
             color: #000000;
-            margin: 10px 0 12px 0;
+            margin: 10px 0 3px 0;
             text-transform: uppercase;
             text-decoration: underline;
+        }
+
+        .filter-subtitle {
+            text-align: center;
+            font-size: 10.5px;
+            color: #000000;
+            margin-bottom: 12px;
         }
 
         /* KPI Summary Cards - B&W */
@@ -113,7 +120,7 @@
             margin-top: 2px;
         }
 
-        /* Main Data Tables - Black & White */
+        /* Main Data Table - Black & White */
         table.data-table {
             margin-top: 5px;
             margin-bottom: 15px;
@@ -161,17 +168,6 @@
             text-transform: uppercase;
         }
 
-        /* Remarks Section */
-        .section-heading {
-            font-size: 12px;
-            font-weight: bold;
-            color: #000000;
-            margin: 15px 0 6px 0;
-            padding-bottom: 3px;
-            border-bottom: 1px solid #000000;
-            page-break-after: avoid;
-        }
-
         .footer {
             margin-top: 25px;
             border-top: 1px solid #000000;
@@ -205,75 +201,92 @@
     </tr>
 </table>
 
-<div class="doc-title">Supplier Evaluation Summary Report</div>
+<div class="doc-title">Supplier Semester Evaluation Summary Report</div>
+<div class="filter-subtitle">
+    Department: <strong>{{ $department === 'all' ? 'All Departments' : $department }}</strong> &nbsp;|&nbsp; 
+    Period Year: <strong>{{ $year === 'all' ? 'All Years' : $year }}</strong>
+</div>
 
 @php
-    $totalSuppliers = count($summary);
-    $totalEvaluations = collect($summary)->sum('total_evaluations');
-    $grandAvg = $totalSuppliers > 0 ? collect($summary)->avg('average_score') : 0;
+    $totalSuppliers = count($data);
+    $sem1TotalPos = collect($data)->sum('sem1_count');
+    $sem2TotalPos = collect($data)->sum('sem2_count');
+    $grandAvg = $totalSuppliers > 0 ? collect($data)->whereNotNull('overall_avg')->avg('overall_avg') : 0;
 @endphp
 
 <!-- KPI Summary Section -->
 <table class="kpi-table">
     <tr>
-        <td style="width: 33%;">
+        <td style="width: 25%;">
             <div class="kpi-card">
-                <div class="kpi-title">Total Suppliers Evaluated</div>
+                <div class="kpi-title">Total Suppliers</div>
                 <div class="kpi-value">{{ $totalSuppliers }}</div>
             </div>
         </td>
-        <td style="width: 33%;">
+        <td style="width: 25%;">
             <div class="kpi-card">
-                <div class="kpi-title">Total Purchase Orders</div>
-                <div class="kpi-value">{{ $totalEvaluations }}</div>
+                <div class="kpi-title">1st Sem POs (Jan - Jun)</div>
+                <div class="kpi-value">{{ $sem1TotalPos }}</div>
             </div>
         </td>
-        <td style="width: 33%;">
+        <td style="width: 25%;">
+            <div class="kpi-card">
+                <div class="kpi-title">2nd Sem POs (Jul - Dec)</div>
+                <div class="kpi-value">{{ $sem2TotalPos }}</div>
+            </div>
+        </td>
+        <td style="width: 25%;">
             <div class="kpi-card">
                 <div class="kpi-title">Overall Average Score</div>
-                <div class="kpi-value">{{ number_format($grandAvg, 2) }}%</div>
+                <div class="kpi-value">{{ number_format($grandAvg ?? 0, 2) }}%</div>
             </div>
         </td>
     </tr>
 </table>
 
-<!-- Main Summary Table -->
+<!-- Main Semester Table -->
 <table class="data-table">
     <thead>
         <tr>
             <th style="width: 5%;">#</th>
-            <th style="width: 25%;" class="text-left">Department</th>
             <th style="width: 30%;" class="text-left">Supplier Name</th>
-            <th style="width: 15%;">Evaluations</th>
-            <th style="width: 12%;">Average Score</th>
-            <th style="width: 13%;">Rating Status</th>
+            <th style="width: 22%;">1st Semester (Jan - Jun)</th>
+            <th style="width: 22%;">2nd Semester (Jul - Dec)</th>
+            <th style="width: 11%;">Overall Avg</th>
+            <th style="width: 10%;">Rating</th>
         </tr>
     </thead>
     <tbody>
-    @if($totalSuppliers === 0)
+    @if(empty($data) || count($data) === 0)
         <tr>
-            <td colspan="6" style="padding: 12px; text-align: center;">No supplier evaluation records found.</td>
+            <td colspan="6" style="padding: 12px; text-align: center;">No evaluation data available for the selected filters.</td>
         </tr>
     @else
-        @foreach($summary as $index => $item)
+        @foreach($data as $index => $item)
             @php
-                $score = $item['average_score'];
-                if ($score >= 90) {
-                    $ratingLabel = 'Outstanding';
-                } elseif ($score >= 80) {
-                    $ratingLabel = 'Satisfactory';
-                } elseif ($score >= 75) {
-                    $ratingLabel = 'Fair';
-                } else {
-                    $ratingLabel = 'Needs Improvement';
+                $sem1 = $item['sem1_avg'] !== null ? number_format($item['sem1_avg'], 2) . '% (' . $item['sem1_count'] . ' POs)' : 'N/A';
+                $sem2 = $item['sem2_avg'] !== null ? number_format($item['sem2_avg'], 2) . '% (' . $item['sem2_count'] . ' POs)' : 'N/A';
+                $overall = $item['overall_avg'] !== null ? number_format($item['overall_avg'], 2) . '%' : 'N/A';
+                
+                $ratingLabel = 'No Rating';
+                if ($item['overall_avg'] !== null) {
+                    if ($item['overall_avg'] >= 90) {
+                        $ratingLabel = 'Outstanding';
+                    } elseif ($item['overall_avg'] >= 80) {
+                        $ratingLabel = 'Satisfactory';
+                    } elseif ($item['overall_avg'] >= 75) {
+                        $ratingLabel = 'Fair';
+                    } else {
+                        $ratingLabel = 'Needs Improvement';
+                    }
                 }
             @endphp
             <tr>
                 <td>{{ $index + 1 }}</td>
-                <td class="text-left font-bold">{{ $item['department'] }}</td>
                 <td class="text-left font-bold">{{ $item['supplier'] }}</td>
-                <td>{{ $item['total_evaluations'] }} PO(s)</td>
-                <td class="font-bold">{{ number_format($score, 2) }}%</td>
+                <td>{{ $sem1 }}</td>
+                <td>{{ $sem2 }}</td>
+                <td class="font-bold">{{ $overall }}</td>
                 <td>
                     <span class="badge">{{ $ratingLabel }}</span>
                 </td>
@@ -282,47 +295,6 @@
     @endif
     </tbody>
 </table>
-
-<!-- Remarks Section -->
-@php
-    $hasRemarks = collect($summary)->pluck('remarks')->flatten()->isNotEmpty();
-@endphp
-
-@if($hasRemarks)
-    <div class="section-heading">Detailed Remarks & Feedback</div>
-
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th style="width: 30%;" class="text-left">Department & Supplier</th>
-                <th style="width: 70%;" class="text-left">Evaluation Feedback / Remarks</th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach($summary as $item)
-            @php
-                $rowspan = count($item['remarks']);
-            @endphp
-            @if($rowspan > 0)
-                @foreach($item['remarks'] as $index => $remark)
-                    <tr>
-                        @if($index === 0)
-                            <td rowspan="{{ $rowspan }}" class="text-left" style="vertical-align: top; background-color: #ffffff;">
-                                <strong>{{ $item['department'] }}</strong><br>
-                                {{ $item['supplier'] }}
-                            </td>
-                        @endif
-                        <td class="text-left">
-                            <strong>• {{ $remark['criteria'] }}:</strong> 
-                            {{ $remark['remarks'] }}
-                        </td>
-                    </tr>
-                @endforeach
-            @endif
-        @endforeach
-        </tbody>
-    </table>
-@endif
 
 <!-- Footer -->
 <div class="footer">

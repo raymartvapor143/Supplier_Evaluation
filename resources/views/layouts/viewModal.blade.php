@@ -414,8 +414,7 @@
                                 </p>
 
                                 <div class="flex justify-center items-center gap-2 mt-4 text-sm text-blue-600">
-
-
+                                    <i class="ri-time-line"></i>
                                     <span id="view_headDate">
                                         -
                                     </span>
@@ -509,12 +508,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('viewEvaluationModal');
 
     document.getElementById('closeViewEvaluationModalBtn')
-        .addEventListener('click', function () {
+        ?.addEventListener('click', function () {
             modal.classList.add('hidden');
         });
 
     document.getElementById('cancelViewEvaluationModalBtn')
-        .addEventListener('click', function () {
+        ?.addEventListener('click', function () {
             modal.classList.add('hidden');
         });
 
@@ -537,6 +536,7 @@ function formatApprovalDate(dateString) {
     if (!dateString) return '-';
 
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
 
     return date.toLocaleString('en-PH', {
         year: 'numeric',
@@ -546,6 +546,23 @@ function formatApprovalDate(dateString) {
         minute: '2-digit',
         hour12: true
     });
+}
+
+function setDigitalSignatureImage(imgElement, imageUrl) {
+    if (!imgElement) return;
+    if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim() !== '') {
+        imgElement.src = imageUrl;
+        imgElement.classList.remove('hidden');
+        imgElement.onerror = () => {
+            imgElement.removeAttribute('src');
+            imgElement.classList.add('hidden');
+            imgElement.onerror = null;
+        };
+    } else {
+        imgElement.removeAttribute('src');
+        imgElement.classList.add('hidden');
+        imgElement.onerror = null;
+    }
 }
 
 async function viewEvaluation(id) {
@@ -567,9 +584,8 @@ async function viewEvaluation(id) {
 
         const representative = approvals.find(a =>
             a.role === 'presentative_staff' || a.role === 'representative_staff'
-        );
+        ) || data.representative_staff;
 
-        // fallback from backend (NO SIGNATURE HERE)
         const headFallback = data.head_info || {};
 
         // ===============================
@@ -592,7 +608,7 @@ async function viewEvaluation(id) {
 
             if (f === 'date_evaluation' && value) {
                 const d = new Date(value);
-                if (!isNaN(d)) {
+                if (!isNaN(d.getTime())) {
                     value = d.toISOString().split('T')[0];
                 }
             }
@@ -652,118 +668,114 @@ async function viewEvaluation(id) {
             (6.25 * scores[3]) +
             (6.25 * scores[4]);
 
-        document.getElementById('view_currentRating').innerText = total.toFixed(2);
-        document.getElementById('view_statusText').innerText =
-            total >= 60 ? 'Approved' : 'Fail!';
+        const currentRatingEl = document.getElementById('view_currentRating');
+        if (currentRatingEl) currentRatingEl.innerText = total.toFixed(2);
+        const statusTextEl = document.getElementById('view_statusText');
+        if (statusTextEl) statusTextEl.innerText = total >= 60 ? 'Approved' : 'Fail!';
 
         // ===============================
-        // PREPARED BY
+        // PREPARED BY (END-USER)
         // ===============================
-        if (preparedBy) {
+        const preparedByNameEl = document.getElementById('view_preparedByName');
+        const preparedByDesigEl = document.getElementById('view_preparedByDesignation');
+        const preparedByDateEl = document.getElementById('view_preparedByDate');
+        const preparedByImgEl = document.getElementById('view_preparedByImage');
+        const preparedBySecEl = document.getElementById('view_preparedBySection');
 
-            document.getElementById('view_preparedByName').innerText =
-                preparedBy.full_name ?? '-';
+        const hasPreparedBySig = Boolean(preparedBy && preparedBy.image && String(preparedBy.image).trim() !== '');
 
-            document.getElementById('view_preparedByDesignation').innerText =
-                preparedBy.designation ?? '-';
-
-            document.getElementById('view_preparedByDate').innerText =
-                `Signed: ${formatApprovalDate(preparedBy.created_at)}`;
-
-            const img = document.getElementById('view_preparedByImage');
-            img.src = preparedBy.image || '';
-            img.onerror = () => img.removeAttribute('src');
-
-            document.getElementById('view_preparedBySection')
-                ?.classList.remove('hidden');
-
+        if (hasPreparedBySig) {
+            if (preparedByNameEl) preparedByNameEl.innerText = preparedBy.full_name ?? '-';
+            if (preparedByDesigEl) preparedByDesigEl.innerText = preparedBy.designation ?? '-';
+            if (preparedByDateEl) preparedByDateEl.innerText = preparedBy.created_at ? `Signed: ${formatApprovalDate(preparedBy.created_at)}` : '-';
+            setDigitalSignatureImage(preparedByImgEl, preparedBy.image);
+            preparedBySecEl?.classList.remove('hidden');
         } else {
-            document.getElementById('view_preparedBySection')
-                ?.classList.add('hidden');
+            if (preparedByNameEl) preparedByNameEl.innerText = '-';
+            if (preparedByDesigEl) preparedByDesigEl.innerText = '-';
+            if (preparedByDateEl) preparedByDateEl.innerText = '-';
+            setDigitalSignatureImage(preparedByImgEl, null);
+            preparedBySecEl?.classList.add('hidden');
         }
 
-// ===============================
-// HEAD LOGIC (STRICT RULES)
-// ===============================
+        // ===============================
+        // HEAD AUTHORIZATION
+        // ===============================
+        const headSecEl = document.getElementById('view_headSection');
+        const headNameEl = document.getElementById('view_headName');
+        const headDesigEl = document.getElementById('view_headDesignation');
+        const headDateEl = document.getElementById('view_headDate');
+        const headImgEl = document.getElementById('view_headImage');
 
-const headName = document.getElementById('view_headName');
-const headDesignation = document.getElementById('view_headDesignation');
-const headDate = document.getElementById('view_headDate');
-const headImg = document.getElementById('view_headImage');
+        const repSectionEl = document.getElementById('view_representativeSection');
+        const repNameEl = document.getElementById('view_representativeName');
+        const repDesigEl = document.getElementById('view_representativeDesignation');
+        const repDateEl = document.getElementById('view_representativeDate');
+        const repImgEl = document.getElementById('view_representativeImage');
 
-const repSection = document.getElementById('view_representativeSection');
+        if (!hasPreparedBySig) {
+            // Hide Head Authorization data panel if Prepared By has no linked signature
+            headSecEl?.classList.add('hidden');
+            if (headNameEl) headNameEl.innerText = '-';
+            if (headDesigEl) headDesigEl.innerText = '-';
+            if (headDateEl) headDateEl.innerText = '-';
+            setDigitalSignatureImage(headImgEl, null);
 
-function clearHeadSignature() {
-    headImg.removeAttribute('src');
-    headImg.onerror = null;
-}
+            repSectionEl?.classList.add('hidden');
+            if (repNameEl) repNameEl.innerText = '-';
+            if (repDesigEl) repDesigEl.innerText = '-';
+            if (repDateEl) repDateEl.innerText = '-';
+            setDigitalSignatureImage(repImgEl, null);
+        } else {
+            headSecEl?.classList.remove('hidden');
 
-if (headApproval) {
+            if (headApproval) {
+                if (headNameEl) headNameEl.innerText = headApproval.full_name ?? '-';
+                if (headDesigEl) headDesigEl.innerText = headApproval.designation ?? '-';
+                if (headDateEl) headDateEl.innerText = headApproval.created_at ? `Approved: ${formatApprovalDate(headApproval.created_at)}` : '-';
+                setDigitalSignatureImage(headImgEl, headApproval.image);
 
-    // ===============================
-    // REAL HEAD (DIGITAL APPROVAL)
-    // ===============================
-    headName.innerText = headApproval.full_name ?? '-';
-    headDesignation.innerText = headApproval.designation ?? '-';
-    headDate.innerText = `Approved: ${formatApprovalDate(headApproval.created_at)}`;
+                repSectionEl?.classList.add('hidden');
+                if (repNameEl) repNameEl.innerText = '-';
+                if (repDesigEl) repDesigEl.innerText = '-';
+                if (repDateEl) repDateEl.innerText = '-';
+                setDigitalSignatureImage(repImgEl, null);
+            } else if (representative) {
+                if (headNameEl) headNameEl.innerText = headFallback.name || headFallback.head_name || '-';
+                if (headDesigEl) headDesigEl.innerText = headFallback.designation || headFallback.head_designation || '-';
+                if (headDateEl) headDateEl.innerText = '-';
+                setDigitalSignatureImage(headImgEl, null);
 
-    headImg.src = headApproval.image || '';
-    headImg.onerror = () => headImg.removeAttribute('src');
+                repSectionEl?.classList.remove('hidden');
+                if (repNameEl) repNameEl.innerText = representative.full_name || representative.name || '-';
+                if (repDesigEl) repDesigEl.innerText = representative.designation || '-';
+                const repSignedDate = representative.created_at || representative.signed_at;
+                if (repDateEl) repDateEl.innerText = repSignedDate ? `Signed: ${formatApprovalDate(repSignedDate)}` : '-';
+                setDigitalSignatureImage(repImgEl, representative.image);
+            } else if (headFallback && (headFallback.name || headFallback.head_name)) {
+                if (headNameEl) headNameEl.innerText = headFallback.name || headFallback.head_name || '-';
+                if (headDesigEl) headDesigEl.innerText = headFallback.designation || headFallback.head_designation || '-';
+                if (headDateEl) headDateEl.innerText = '-';
+                setDigitalSignatureImage(headImgEl, null);
 
-    repSection?.classList.add('hidden');
+                repSectionEl?.classList.add('hidden');
+                if (repNameEl) repNameEl.innerText = '-';
+                if (repDesigEl) repDesigEl.innerText = '-';
+                if (repDateEl) repDateEl.innerText = '-';
+                setDigitalSignatureImage(repImgEl, null);
+            } else {
+                if (headNameEl) headNameEl.innerText = '-';
+                if (headDesigEl) headDesigEl.innerText = '-';
+                if (headDateEl) headDateEl.innerText = '-';
+                setDigitalSignatureImage(headImgEl, null);
 
-} else if (headFallback?.name) {
-
-    // ===============================
-    // FALLBACK HEAD (USER / OFFICE)
-    // NO SIGNATURE ALLOWED
-    // ===============================
-    headName.innerText = headFallback.name ?? '-';
-    headDesignation.innerText = headFallback.designation ?? '-';
-    headDate.innerText = '-';
-
-    clearHeadSignature(); // ✅ IMPORTANT FIX
-
-    // ===============================
-    // SHOW REPRESENTATIVE STAFF
-    // ===============================
-    if (representative) {
-
-        repSection?.classList.remove('hidden');
-
-        document.getElementById('view_representativeName').innerText =
-            representative.full_name ?? '-';
-
-        document.getElementById('view_representativeDesignation').innerText =
-            representative.designation ?? '-';
-
-        document.getElementById('view_representativeDate').innerText =
-            `Signed: ${formatApprovalDate(representative.created_at)}`;
-
-        const repImg = document.getElementById('view_representativeImage');
-        repImg.src = representative.image || '';
-        repImg.onerror = () => repImg.removeAttribute('src');
-
-        // ✅ EXTRA CLEANUP: ensure head signature NEVER shows
-        clearHeadSignature();
-        headDate.innerText = '';
-
-    } else {
-        repSection?.classList.add('hidden');
-    }
-
-} else {
-
-    // ===============================
-    // NOTHING FOUND
-    // ===============================
-    headName.innerText = '-';
-    headDesignation.innerText = '-';
-    headDate.innerText = '-';
-
-    clearHeadSignature();
-    repSection?.classList.add('hidden');
-}
+                repSectionEl?.classList.add('hidden');
+                if (repNameEl) repNameEl.innerText = '-';
+                if (repDesigEl) repDesigEl.innerText = '-';
+                if (repDateEl) repDateEl.innerText = '-';
+                setDigitalSignatureImage(repImgEl, null);
+            }
+        }
 
         document.querySelectorAll('#viewEvaluationModal select')
             .forEach(s => s.disabled = true);
@@ -778,3 +790,4 @@ if (headApproval) {
 }
 
 </script>
+

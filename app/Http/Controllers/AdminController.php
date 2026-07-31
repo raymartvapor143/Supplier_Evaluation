@@ -308,16 +308,21 @@ public function getDepartmentSuppliers(Request $request, $department)
 {
     $year = $request->query('year');
 
-    $evaluations = Evaluation::notDeleted()
-        ->whereHas('office', function ($q) use ($department) {
-            $q->where('name', $department);
-        })
+    $query = Evaluation::notDeleted()
         ->where('status', 'submitted')
-        ->when(!empty($year) && $year !== 'all', function ($query) use ($year) {
-            $query->whereYear('date_evaluation', $year);
-        })
-        ->with('criteriaScores')
-        ->get();
+        ->with('criteriaScores');
+
+    if (!empty($department) && $department !== 'all') {
+        $query->whereHas('office', function ($q) use ($department) {
+            $q->where('name', $department);
+        });
+    }
+
+    if (!empty($year) && $year !== 'all') {
+        $query->whereYear('date_evaluation', $year);
+    }
+
+    $evaluations = $query->get();
 
     $criteriaWeightMap = [
         1 => [4 => 20, 3 => 15, 2 => 10, 1 => 5],
@@ -379,10 +384,13 @@ public function getMonthlyEvaluations(Request $request, $department)
             DB::raw('MONTH(date_evaluation) as month'),
             DB::raw('COUNT(*) as count')
         )
-        ->whereHas('office', function ($q) use ($department) {
-            $q->where('name', $department);
-        })
         ->where('status', 'submitted');
+
+    if (!empty($department) && $department !== 'all') {
+        $query->whereHas('office', function ($q) use ($department) {
+            $q->where('name', $department);
+        });
+    }
 
     if (!empty($year) && $year !== 'all') {
         $query->whereYear('date_evaluation', $year);
@@ -393,5 +401,178 @@ public function getMonthlyEvaluations(Request $request, $department)
         ->get();
 
     return response()->json($data);
+}
+
+
+public function getSemesterEvaluations(Request $request, $department = 'all')
+{
+    $year = $request->query('year');
+
+    $query = Evaluation::notDeleted()
+        ->where('status', 'submitted')
+        ->with('criteriaScores');
+
+    if (!empty($department) && $department !== 'all') {
+        $query->whereHas('office', function ($q) use ($department) {
+            $q->where('name', $department);
+        });
+    }
+
+    if (!empty($year) && $year !== 'all') {
+        $query->whereYear('date_evaluation', $year);
+    }
+
+    $evaluations = $query->get();
+
+    $criteriaWeightMap = [
+        1 => [4 => 20, 3 => 15, 2 => 10, 1 => 5],
+        2 => [4 => 30, 3 => 22.5, 2 => 15, 1 => 7.5],
+        3 => [4 => 25, 3 => 18.75, 2 => 12.5, 1 => 6.25],
+        4 => [4 => 25, 3 => 18.75, 2 => 12.5, 1 => 6.25],
+    ];
+
+    // Group by supplier
+    $grouped = $evaluations->groupBy('supplier_name');
+
+    $result = [];
+
+    foreach ($grouped as $supplier => $evals) {
+        $sem1Scores = [];
+        $sem2Scores = [];
+
+        foreach ($evals as $evaluation) {
+            $evaluationScore = 0;
+
+            foreach ($evaluation->criteriaScores as $score) {
+                $criteriaId = $score->criteria_id;
+                $rating = $score->number_rating;
+
+                if (isset($criteriaWeightMap[$criteriaId][$rating])) {
+                    $evaluationScore += $criteriaWeightMap[$criteriaId][$rating];
+                }
+            }
+
+            $month = $evaluation->date_evaluation ? Carbon::parse($evaluation->date_evaluation)->month : null;
+
+            if ($month) {
+                if ($month >= 1 && $month <= 6) {
+                    $sem1Scores[] = $evaluationScore;
+                } elseif ($month >= 7 && $month <= 12) {
+                    $sem2Scores[] = $evaluationScore;
+                }
+            }
+        }
+
+        $sem1Avg = count($sem1Scores) > 0 ? round(array_sum($sem1Scores) / count($sem1Scores), 2) : null;
+        $sem2Avg = count($sem2Scores) > 0 ? round(array_sum($sem2Scores) / count($sem2Scores), 2) : null;
+
+        $allScores = array_merge($sem1Scores, $sem2Scores);
+        $overallAvg = count($allScores) > 0 ? round(array_sum($allScores) / count($allScores), 2) : null;
+
+        $result[] = [
+            'supplier' => $supplier,
+            'sem1_avg' => $sem1Avg,
+            'sem1_count' => count($sem1Scores),
+            'sem2_avg' => $sem2Avg,
+            'sem2_count' => count($sem2Scores),
+            'overall_avg' => $overallAvg,
+            'evaluations_count' => count($allScores),
+        ];
+    }
+
+    // Sort by overall_avg descending
+    usort($result, function ($a, $b) {
+        return ($b['overall_avg'] ?? 0) <=> ($a['overall_avg'] ?? 0);
+    });
+
+    return response()->json($result);
+}
+
+
+public function downloadSemesterSummary(Request $request)
+{
+    $department = $request->query('department', 'all');
+    $year = $request->query('year', 'all');
+
+    $query = Evaluation::notDeleted()
+        ->where('status', 'submitted')
+        ->with('criteriaScores');
+
+    if (!empty($department) && $department !== 'all') {
+        $query->whereHas('office', function ($q) use ($department) {
+            $q->where('name', $department);
+        });
+    }
+
+    if (!empty($year) && $year !== 'all') {
+        $query->whereYear('date_evaluation', $year);
+    }
+
+    $evaluations = $query->get();
+
+    $criteriaWeightMap = [
+        1 => [4 => 20, 3 => 15, 2 => 10, 1 => 5],
+        2 => [4 => 30, 3 => 22.5, 2 => 15, 1 => 7.5],
+        3 => [4 => 25, 3 => 18.75, 2 => 12.5, 1 => 6.25],
+        4 => [4 => 25, 3 => 18.75, 2 => 12.5, 1 => 6.25],
+    ];
+
+    $grouped = $evaluations->groupBy('supplier_name');
+    $data = [];
+
+    foreach ($grouped as $supplier => $evals) {
+        $sem1Scores = [];
+        $sem2Scores = [];
+
+        foreach ($evals as $evaluation) {
+            $evaluationScore = 0;
+
+            foreach ($evaluation->criteriaScores as $score) {
+                $criteriaId = $score->criteria_id;
+                $rating = $score->number_rating;
+
+                if (isset($criteriaWeightMap[$criteriaId][$rating])) {
+                    $evaluationScore += $criteriaWeightMap[$criteriaId][$rating];
+                }
+            }
+
+            $month = $evaluation->date_evaluation ? Carbon::parse($evaluation->date_evaluation)->month : null;
+
+            if ($month) {
+                if ($month >= 1 && $month <= 6) {
+                    $sem1Scores[] = $evaluationScore;
+                } elseif ($month >= 7 && $month <= 12) {
+                    $sem2Scores[] = $evaluationScore;
+                }
+            }
+        }
+
+        $sem1Avg = count($sem1Scores) > 0 ? round(array_sum($sem1Scores) / count($sem1Scores), 2) : null;
+        $sem2Avg = count($sem2Scores) > 0 ? round(array_sum($sem2Scores) / count($sem2Scores), 2) : null;
+
+        $allScores = array_merge($sem1Scores, $sem2Scores);
+        $overallAvg = count($allScores) > 0 ? round(array_sum($allScores) / count($allScores), 2) : null;
+
+        $data[] = [
+            'supplier' => $supplier,
+            'sem1_avg' => $sem1Avg,
+            'sem1_count' => count($sem1Scores),
+            'sem2_avg' => $sem2Avg,
+            'sem2_count' => count($sem2Scores),
+            'overall_avg' => $overallAvg,
+            'evaluations_count' => count($allScores),
+        ];
+    }
+
+    usort($data, function ($a, $b) {
+        return ($b['overall_avg'] ?? 0) <=> ($a['overall_avg'] ?? 0);
+    });
+
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        'pdf.semester_summary',
+        compact('data', 'department', 'year')
+    )->setPaper('a4', 'landscape');
+
+    return $pdf->download('supplier-semester-evaluations-summary.pdf');
 }
 }

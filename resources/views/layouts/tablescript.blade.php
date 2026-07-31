@@ -108,19 +108,38 @@ function renderTable(status) {
         (item.office_name ?? '').toLowerCase().includes(search)
     );
 
+    if (filtered.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="7" class="px-4 py-10 text-center text-gray-400">
+                    <div class="flex flex-col items-center justify-center space-y-2">
+                        <i class="ri-inbox-line text-3xl text-gray-300"></i>
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">No evaluations found</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+        if (paginationContainers[status]) paginationContainers[status].innerHTML = '';
+        return;
+    }
+
     const { page, perPage } = pagination[status];
     const startIndex = (page - 1) * perPage;
     const pageData = filtered.slice(startIndex, startIndex + perPage);
-
-
 
     pageData.forEach(item => {
         const rowId = `row-${status}-${item.id}`.replace(/\s+/g,'-');
 
         const score = parseFloat(item.average_score);
-        let scoreClass = "bg-green-100 text-green-700 font-bold";
-        if (!isNaN(score) && score < 60) scoreClass = "bg-red-100 text-red-700 font-bold";
-        else if (score === 60) scoreClass = "bg-orange-100 text-orange-700 font-bold";
+        let scoreBadge = '<span class="text-gray-400 text-xs font-medium">-</span>';
+        if (!isNaN(score)) {
+            let badgeStyle = "bg-green-100 text-green-800 border-green-300";
+            if (score < 60) badgeStyle = "bg-red-100 text-red-800 border-red-300";
+            else if (score < 75) badgeStyle = "bg-amber-100 text-amber-800 border-amber-300";
+            else if (score < 90) badgeStyle = "bg-blue-100 text-blue-800 border-blue-300";
+
+            scoreBadge = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${badgeStyle}">${item.average_score}%</span>`;
+        }
 
 let actionOptions = `
     <option value="" selected class="text-black bg-white">
@@ -240,25 +259,22 @@ else {
             rowCache[status].add(rowId);
             // ✅ CREATE ROW
             tableBody.insertAdjacentHTML('beforeend', `
-<tr id="${rowId}" class="hover:bg-orange-50 transition">
-    <td class="px-4 py-3">${item.po_no ?? '-'}</td>
-    <td class="px-4 py-3">${item.supplier_name ?? '-'}</td>
-    <td class="px-4 py-3">
-    ${item.office_name ?? '-'}
-    ${item.end_user ? ` (${item.end_user.toUpperCase()})` : ''}
-</td>
-    <td class="px-4 py-3 text-center ${scoreClass}">
-        ${item.average_score != null ? item.average_score + '%' : '-'}
+<tr id="${rowId}" class="hover:bg-blue-50/50 transition-colors duration-150 border-b border-gray-100">
+    <td class="px-4 py-3 text-xs font-bold text-gray-800">${item.po_no ?? '-'}</td>
+    <td class="px-4 py-3 text-xs font-semibold text-gray-900">${item.supplier_name ?? '-'}</td>
+    <td class="px-4 py-3 text-xs text-gray-700">
+        <div class="font-medium text-gray-800">${item.office_name ?? '-'}</div>
+        ${item.end_user ? `<div class="text-[10px] text-gray-500 uppercase font-semibold">(${item.end_user})</div>` : ''}
     </td>
-    <td class="px-4 py-3 text-center">${item.period_year ? `CY ${item.period_year}` : '-'}</td>
-    <td class="px-4 py-3 text-center">${item.date_evaluation ?? '-'}</td>
-    <td class="px-4 py-3 action-cell">
+    <td class="px-4 py-3 text-center">${scoreBadge}</td>
+    <td class="px-4 py-3 text-center text-xs font-semibold text-gray-700">${item.period_year ? `CY ${item.period_year}` : '-'}</td>
+    <td class="px-4 py-3 text-center text-xs text-gray-600 font-medium">${item.date_evaluation ?? '-'}</td>
+    <td class="px-4 py-3 text-center action-cell">
         <select
             class="evaluationAction
                    bg-gradient-to-r from-orange-400 to-blue-500
-                   text-white text-sm font-medium
-                   px-3 py-2 rounded-lg
-                   shadow-sm border border-transparent
+                   text-white text-xs font-semibold
+                   px-3 py-1.5 rounded-lg shadow-sm border border-transparent
                    focus:outline-none focus:ring-2 focus:ring-blue-300
                    hover:shadow-md transition duration-200
                    cursor-pointer"
@@ -284,13 +300,12 @@ else {
 
             // 2 - Office + End User
             cells[2].innerHTML = `
-                ${item.office_name ?? '-'}
-                ${item.end_user ? ` (${item.end_user.toUpperCase()})` : ''}
+                <div class="font-medium text-gray-800">${item.office_name ?? '-'}</div>
+                ${item.end_user ? `<div class="text-[10px] text-gray-500 uppercase font-semibold">(${item.end_user})</div>` : ''}
             `;
 
             // 3 - Score
-            cells[3].textContent = item.average_score != null ? item.average_score + '%' : '-';
-            cells[3].className = `px-4 py-3 text-center ${scoreClass}`;
+            cells[3].innerHTML = scoreBadge;
 
             // 4 - CY PERIOD (FIXED)
             cells[4].textContent = item.period_year ? `CY ${item.period_year}` : '-';
@@ -849,3 +864,48 @@ searchInput.addEventListener('input', () => {
 
 });
 </script>
+
+<style>
+.pagination-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    user-select: none;
+}
+
+.pagination-btn:hover:not(.active):not(.disabled) {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+    color: #0f172a;
+    transform: translateY(-1px);
+}
+
+.pagination-btn.active {
+    background-color: #0f172a;
+    border-color: #0f172a;
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.25), 0 2px 4px -2px rgba(15, 23, 42, 0.1);
+}
+
+.pagination-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background-color: #f8fafc;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+    box-shadow: none;
+}
+</style>

@@ -160,6 +160,10 @@ Route::get('/analytics/departments', [AdminController::class, 'getDepartments'])
 Route::get('/analytics/department/{department}/suppliers', [AdminController::class, 'getDepartmentSuppliers']);
 // Line chart
 Route::get('/analytics/department/{department}/monthly-evaluations', [AdminController::class, 'getMonthlyEvaluations']);
+// Semester chart & PDF export
+Route::get('/analytics/department/{department}/semester-evaluations', [AdminController::class, 'getSemesterEvaluations']);
+Route::get('/analytics/semester-evaluations/download', [AdminController::class, 'downloadSemesterSummary'])
+    ->name('admin.evaluations.semester.download');
 
 
 Route::post('/purchase-orders/import', [PurchaseOrderController::class, 'import'])->name('po.import');
