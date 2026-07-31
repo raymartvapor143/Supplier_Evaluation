@@ -14,6 +14,7 @@ return [
     |
     */
 
+
     'mailgun' => [
         'domain' => env('MAILGUN_DOMAIN'),
         'secret' => env('MAILGUN_SECRET'),
@@ -21,14 +22,36 @@ return [
         'scheme' => 'https',
     ],
 
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],
+
 
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google reCAPTCHA
+    |--------------------------------------------------------------------------
+    |
+    | Used for verifying CAPTCHA responses from Google reCAPTCHA v2.
+    |
+    */
+
+    'recaptcha' => [
+
+        'site_key' => env('RECAPTCHA_SITE_KEY'),
+
+        'secret' => env('RECAPTCHA_SECRET_KEY'),
+
+    ],
+
 
 ];

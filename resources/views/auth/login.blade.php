@@ -34,7 +34,7 @@
   </style>
 </head>
 
-<script src="{{asset('script/block.js')}}"></script>
+{{-- <script src="{{asset('script/block.js')}}"></script> --}}
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -927,100 +927,458 @@ if (error.response) {
 </div>
 
 
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
 <script>
 async function showForgotPasswordModal(event) {
 
     event.preventDefault();
 
-    const { value: email } = await Swal.fire({
-        title: 'Forgot Password',
+    let widgetId = null;
+
+    const { value: formData } = await Swal.fire({
+
+        width: 520,
+
+        background: "#ffffff",
+
+        showCancelButton: true,
+
+        reverseButtons: true,
+
+        focusConfirm: false,
+
+        confirmButtonText: `
+            <span class="flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    class="w-5 h-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+
+                    <path stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8m-18 8h18a2 2 0 002-2V6a2 2 0 00-2-2H3a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+
+                Send Reset Link
+            </span>
+        `,
+
+        cancelButtonText: `
+            <span class="flex items-center gap-2">
+                Cancel
+            </span>
+        `,
+
+
+        customClass: {
+
+            popup:
+                'rounded-3xl shadow-2xl border border-gray-100',
+
+            confirmButton:
+                'bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 py-3 font-semibold transition',
+
+            cancelButton:
+                'bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl px-6 py-3 font-semibold transition',
+
+            validationMessage:
+                'rounded-xl'
+
+        },
+
+
+        title: '',
+
+
         html: `
-            <p class="text-gray-600 mb-4">
-                Enter your registered email address.
+
+        <div class="flex flex-col items-center mb-6">
+
+
+            <div class="
+                w-20 h-20
+                rounded-full
+                bg-gradient-to-br
+                from-blue-500
+                to-indigo-600
+                flex
+                items-center
+                justify-center
+                shadow-xl">
+
+
+                <svg xmlns="http://www.w3.org/2000/svg"
+                    class="w-10 h-10 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor">
+
+
+                    <path stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5 9 6.343 9 8s1.343 3 3 3zm0 0c-4.418 0-8 2.239-8 5v2h16v-2c0-2.761-3.582-5-8-5z"/>
+
+
+                </svg>
+
+
+            </div>
+
+
+            <h2 class="
+                text-2xl
+                font-bold
+                text-gray-800
+                mt-5">
+
+                Forgot Password?
+
+            </h2>
+
+
+            <p class="
+                text-sm
+                text-gray-500
+                mt-2">
+
+                Recover your account securely
+
             </p>
 
+
+        </div>
+
+
+
+        <div class="text-left">
+
+
+            <div class="
+                bg-blue-50
+                border
+                border-blue-100
+                rounded-2xl
+                p-4
+                mb-5">
+
+
+                <p class="
+                    text-sm
+                    text-blue-700
+                    leading-relaxed">
+
+
+                    Enter your registered email address.
+                    We will send a secure password reset link.
+
+
+                </p>
+
+
+            </div>
+
+
+
+            <label class="
+                block
+                text-sm
+                font-semibold
+                text-gray-700
+                mb-2">
+
+                Email Address
+
+            </label>
+
+
+
             <input
+
                 id="forgotEmail"
+
                 type="email"
-                class="swal2-input"
+
+                class="
+                    w-full
+                    px-5
+                    py-3
+                    rounded-xl
+                    border
+                    border-gray-300
+                    focus:ring-4
+                    focus:ring-blue-100
+                    focus:border-blue-500
+                    outline-none
+                    transition"
+
                 placeholder="you@example.com"
-                autocomplete="email">
+
+                autocomplete="email"
+
+            >
+
+
+
+
+            <div
+
+                id="recaptcha-container"
+
+                class="
+                    mt-5
+                    flex
+                    justify-center">
+
+            </div>
+
+
+
+        </div>
+
         `,
-        confirmButtonText: 'Send Reset Link',
-        showCancelButton: true,
-        cancelButtonText: 'Cancel',
-        focusConfirm: false,
+
+
+
+        didOpen: () => {
+
+
+            const interval = setInterval(() => {
+
+
+                if(typeof grecaptcha !== "undefined"){
+
+
+                    clearInterval(interval);
+
+
+
+                    widgetId = grecaptcha.render(
+
+                        "recaptcha-container",
+
+                        {
+
+                            sitekey: "6Ldy5m0tAAAAAE26f0hmzwXwpFq39eJ54-N-JIYg"
+
+                        }
+
+                    );
+
+
+                }
+
+
+            },200);
+
+
+        },
+
+
+
+        willClose: () => {
+
+
+            if(
+
+                typeof grecaptcha !== "undefined"
+
+                &&
+
+                widgetId !== null
+
+            ){
+
+                grecaptcha.reset(widgetId);
+
+            }
+
+
+        },
+
+
 
         preConfirm: () => {
 
-            const email =
-                document.getElementById('forgotEmail').value.trim();
 
-            if (!email) {
+            const email =
+                document
+                .getElementById("forgotEmail")
+                .value
+                .trim();
+
+
+
+            if(!email){
+
 
                 Swal.showValidationMessage(
-                    'Please enter your email address.'
+                    "Please enter your email address."
                 );
 
+
                 return false;
+
+
             }
+
+
 
             const emailPattern =
                 /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-            if (!emailPattern.test(email)) {
+
+
+            if(!emailPattern.test(email)){
+
 
                 Swal.showValidationMessage(
-                    'Please enter a valid email address.'
+                    "Please enter a valid email address."
                 );
 
+
                 return false;
+
+
             }
 
-            return email;
+
+
+            const captcha =
+                grecaptcha.getResponse(widgetId);
+
+
+
+            if(!captcha){
+
+
+                Swal.showValidationMessage(
+                    "Please complete the CAPTCHA verification."
+                );
+
+
+                return false;
+
+
+            }
+
+
+
+            return {
+
+                email,
+
+                captcha
+
+            };
+
+
         }
+
+
     });
 
-    if (!email) return;
+
+
+    if(!formData) return;
+
+
 
     try {
 
-        Swal.fire({
-            title: 'Sending...',
-            text: 'Please wait.',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
 
-        // Change this route to your Laravel endpoint
-        const response = await axios.post('/forgot-password', {
-            email: email
-        });
-
-        Swal.close();
 
         Swal.fire({
-            icon: 'success',
-            title: 'Email Sent',
-            text: response.data.message ||
-                  'Password reset instructions have been sent.'
+
+            title:"Sending Reset Link",
+
+            html:`
+
+                <p class="text-gray-500">
+
+                    Please wait while we process your request...
+
+                </p>
+
+            `,
+
+            allowOutsideClick:false,
+
+            didOpen:()=>{
+
+                Swal.showLoading();
+
+            }
+
         });
 
-    } catch (error) {
 
-        Swal.close();
+
+        const response = await axios.post(
+
+            "/forgot-password",
+
+            {
+
+                email: formData.email,
+
+                captcha: formData.captcha
+
+            }
+
+        );
+
+
 
         Swal.fire({
-            icon: 'error',
-            title: 'Request Failed',
+
+            icon:"success",
+
+            title:"Email Sent",
+
             text:
-                error.response?.data?.message ||
-                'Unable to process your request.'
+
+            response.data.message ||
+
+            "Password reset instructions have been sent.",
+
+
+            confirmButtonColor:"#2563eb"
+
         });
+
+
+
+    } catch(error){
+
+
+
+        Swal.fire({
+
+            icon:"error",
+
+            title:"Request Failed",
+
+            text:
+
+            error.response?.data?.message ||
+
+            "Unable to process your request.",
+
+
+            confirmButtonColor:"#dc2626"
+
+        });
+
 
     }
+
+
 }
+
 </script>
 
 
