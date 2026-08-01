@@ -36,8 +36,6 @@
                 </button> </div> --}}
             </div>
 
-            @include('layouts.animals')
-
             <div class="bg-gray-50 rounded-lg p-4 mb-6">
               @include('layouts.filter')
             </div>
