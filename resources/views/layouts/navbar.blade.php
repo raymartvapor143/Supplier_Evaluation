@@ -180,6 +180,11 @@
    <i class="ri-user-line mr-2"></i> Profile
 </a>
 
+<a href="#" onclick="openChangePasswordModal()"
+   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+   <i class="ri-key-2-line mr-2"></i> Change Password
+</a>
+
             {{-- <a href="#"
               class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
               <i class="ri-settings-3-line mr-2"></i> Settings

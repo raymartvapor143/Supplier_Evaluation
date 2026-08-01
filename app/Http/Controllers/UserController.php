@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 
@@ -316,5 +317,67 @@ public function downloadAuthorizationLetter($id)
         storage_path('app/private/' . $path)
     );
 }
+
+    /**
+     * Change authenticated user password
+     */
+    public function changePassword(Request $request)
+    {
+        try {
+            $user = auth()->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated.'
+                ], 401);
+            }
+
+            $validated = $request->validate([
+                'current_password' => ['required', 'string'],
+                'new_password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
+            ], [
+                'current_password.required' => 'Please enter your current password.',
+                'new_password.required' => 'Please enter a new password.',
+                'new_password.min' => 'The new password must be at least 8 characters long.',
+                'new_password.confirmed' => 'The new password confirmation does not match.',
+                'new_password.different' => 'The new password must be different from your current password.',
+            ]);
+
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'The current password you provided is incorrect.'
+                ], 422);
+            }
+
+            $user->update([
+                'password' => Hash::make($request->new_password)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password updated successfully.'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $firstError = collect($e->errors())->flatten()->first() ?? 'Validation error.';
+            return response()->json([
+                'success' => false,
+                'message' => $firstError,
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Throwable $e) {
+            Log::error('CHANGE PASSWORD ERROR', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while changing password.'
+            ], 500);
+        }
+    }
 
 }

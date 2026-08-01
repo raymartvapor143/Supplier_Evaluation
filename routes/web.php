@@ -286,6 +286,7 @@ Route::get('/purchase-orders/pdf/{id}', [PurchaseOrderController::class, 'viewPd
 
 
 
+    Route::post('/user/change-password', [UserController::class, 'changePassword'])->name('user.change-password');
     Route::put('/user/{user}', [UserController::class, 'update'])->name('user.update');
     Route::delete('/delete/evaluations/{id}', [EvaluationController::class, 'destroy']);
 
