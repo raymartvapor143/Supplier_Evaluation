@@ -81,13 +81,19 @@
                 </div>
 
                 <!-- End User -->
-                <div>
+                <div class="relative">
                     <label class="mb-2 block text-sm font-semibold text-gray-700">End User</label>
                     <input type="text"
                         name="end_user"
                         id="edit_end_user_v2"
+                        placeholder="Search End User / Office Abbreviation..."
                         readonly
+                        autocomplete="off"
                         class="w-full rounded-xl border border-orange-200 bg-white px-4 py-3 text-sm shadow-sm outline-none">
+
+                    <div id="endUserDropdown_v2"
+                        class="absolute z-50 w-full bg-white border border-orange-200 rounded-xl shadow-xl mt-1 hidden max-h-56 overflow-y-auto p-2">
+                    </div>
                 </div>
 
                 <!-- Status -->
@@ -166,6 +172,77 @@
 <script>
 
 let currentPoId = null;
+let cachedOffices_v2 = [];
+
+async function loadOfficesForEditPO_v2() {
+    if (cachedOffices_v2.length > 0) return cachedOffices_v2;
+    try {
+        const res = await fetch('/offices/list');
+        cachedOffices_v2 = await res.json();
+    } catch (e) {
+        console.error('Failed to load offices for PO edit', e);
+        cachedOffices_v2 = [];
+    }
+    return cachedOffices_v2;
+}
+
+function renderEndUserDropdown_v2(filter = '') {
+    const dropdown = document.getElementById('endUserDropdown_v2');
+    const search = filter.trim().toLowerCase();
+    
+    const filtered = cachedOffices_v2.filter(o => {
+        const abbr = (o.abbreviation ?? '').toLowerCase();
+        const name = (o.name ?? '').toLowerCase();
+        return abbr.includes(search) || name.includes(search);
+    });
+
+    if (filtered.length === 0) {
+        dropdown.innerHTML = `<div class="px-3 py-2 text-xs text-gray-400">No matching offices</div>`;
+    } else {
+        dropdown.innerHTML = filtered.map(o => {
+            const displayVal = o.abbreviation ? o.abbreviation : o.name;
+            const subText = o.abbreviation && o.name ? `<span class="text-xs text-gray-500 block">${o.name}</span>` : '';
+            return `
+                <div class="px-3 py-2 text-sm rounded-lg hover:bg-orange-100 cursor-pointer font-medium text-gray-800 transition"
+                     onclick="selectEndUser_v2('${displayVal.replace(/'/g, "\\'")}')">
+                    ${displayVal}
+                    ${subText}
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function selectEndUser_v2(val) {
+    document.getElementById('edit_end_user_v2').value = val;
+    document.getElementById('endUserDropdown_v2').classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const endUserInput = document.getElementById('edit_end_user_v2');
+    const dropdown = document.getElementById('endUserDropdown_v2');
+
+    if (endUserInput && dropdown) {
+        endUserInput.addEventListener('input', () => {
+            if (endUserInput.readOnly) return;
+            renderEndUserDropdown_v2(endUserInput.value);
+            dropdown.classList.remove('hidden');
+        });
+
+        endUserInput.addEventListener('focus', async () => {
+            if (endUserInput.readOnly) return;
+            await loadOfficesForEditPO_v2();
+            renderEndUserDropdown_v2(endUserInput.value);
+            dropdown.classList.remove('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#edit_end_user_v2') && !e.target.closest('#endUserDropdown_v2')) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    }
+});
 
 function setPOViewMode_v2()
 {
@@ -173,6 +250,8 @@ function setPOViewMode_v2()
     document.getElementById('edit_pr_no_v2').readOnly = true;
     document.getElementById('edit_supplier_v2').readOnly = true;
     document.getElementById('edit_end_user_v2').readOnly = true;
+
+    document.getElementById('endUserDropdown_v2').classList.add('hidden');
 
     document.getElementById('edit_status_v2').disabled = true;
 
@@ -206,6 +285,9 @@ function enablePOEdit_v2()
 
     document.getElementById('poModalSubtitle_v2').innerText =
         'Update purchase order information';
+
+    // Fetch offices in background so dropdown is ready
+    loadOfficesForEditPO_v2();
 
     // Show Remove button if PDF exists
     const removeBtn = document.getElementById('removePdfBtn');
