@@ -78,14 +78,38 @@
           <h3 class="text-md font-semibold mb-4">Add New Office</h3>
 
           <div class="space-y-3">
-            <input id="office_name" type="text" placeholder="Office name"
-              class="w-full border rounded-lg px-3 py-2">
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Office Name *</label>
+              <input id="office_name" type="text" placeholder="Office name"
+                class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+            </div>
 
-            <input id="office_abbr" type="text" placeholder="Abbreviation"
-              class="w-full border rounded-lg px-3 py-2">
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Abbreviation</label>
+              <input id="office_abbr" type="text" placeholder="Abbreviation (e.g. IT, HR)"
+                class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Head of Office</label>
+              <input id="office_head" type="text" placeholder="Head of office"
+                class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Designation</label>
+              <input id="office_designation" type="text" placeholder="Designation / Position"
+                class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Responsibility Number</label>
+              <input id="office_responsibility_number" type="text" placeholder="Responsibility center code/number"
+                class="w-full border rounded-lg px-3 py-2 text-sm bg-white">
+            </div>
 
             <button onclick="addOffice()"
-              class="w-full bg-primary text-white py-2 rounded-lg hover:opacity-90">
+              class="w-full bg-primary text-white py-2 rounded-lg hover:opacity-90 mt-2 font-medium">
               Save Office
             </button>
           </div>
@@ -171,6 +195,9 @@ async function loadOffices() {
 async function addOffice() {
   const name = document.getElementById('office_name').value.trim();
   const abbreviation = document.getElementById('office_abbr').value.trim();
+  const head = document.getElementById('office_head').value.trim();
+  const designation = document.getElementById('office_designation').value.trim();
+  const responsibility_number = document.getElementById('office_responsibility_number').value.trim();
 
   if (!name) {
     return Swal.fire('Required', 'Office name required', 'warning');
@@ -182,11 +209,20 @@ async function addOffice() {
       'Content-Type': 'application/json',
       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
     },
-    body: JSON.stringify({ name, abbreviation })
+    body: JSON.stringify({
+      name,
+      abbreviation,
+      head,
+      designation,
+      responsibility_number
+    })
   });
 
   document.getElementById('office_name').value = '';
   document.getElementById('office_abbr').value = '';
+  document.getElementById('office_head').value = '';
+  document.getElementById('office_designation').value = '';
+  document.getElementById('office_responsibility_number').value = '';
 
   loadOffices();
   showTab('list');

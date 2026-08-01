@@ -23,18 +23,15 @@ public function list()
 
 public function store(Request $request)
 {
-    $request->validate([
+    $validated = $request->validate([
         'name' => 'required|string|max:255',
-        'abbreviation' => 'nullable|string|max:50'
+        'abbreviation' => 'nullable|string|max:50',
+        'head' => 'nullable|string|max:255',
+        'designation' => 'nullable|string|max:255',
+        'responsibility_number' => 'nullable|string|max:100',
     ]);
 
-    Office::create([
-        'name' => $row[1] ?? null,
-        'abbreviation' => $row[0] ?? null,
-        'head' => $row[2] ?? null,
-        'designation' => $row[3] ?? null,
-        'responsibility_number' => $row[4] ?? null,
-    ]);
+    Office::create($validated);
 
     return response()->json(['success' => true]);
 }
