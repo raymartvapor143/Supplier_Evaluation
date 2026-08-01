@@ -1048,37 +1048,22 @@ public function update(Request $request, $id)
 
 
         /** @var User $user */
-        if (!$user->isAdmin() && $evaluation->office_id !== $user->office_id) {
-            abort(403, 'Unauthorized action.');
-        }
+        if (!$user->isAdmin() && !$user->isPgso()) {
+            $hasApprovedRequest = Requests::where('evaluation_id', $evaluation->id)
+                ->where('user_id', $user->id)
+                ->where('status', 'approved')
+                ->exists();
 
-        $requestRecord = $evaluation->latestRequest;
-
-
-        $newStatus = $evaluation->status;
-
-        if ($requestRecord?->status === 'approved') {
-            $newStatus = 'submitted';
-        } else {
-
-            if ($user->isHead()) {
-                $newStatus = 'submitted';
-            }
-
-            elseif ($user->isEndUser()) {
-                $newStatus = 'head review';
-            }
-
-            elseif ($user->role === 'presentative_staff') {
-
-                $newStatus = 'submitted';
-            }
-
-            else {
-                $newStatus = $evaluation->status;
+            if (!$hasApprovedRequest && in_array($evaluation->status, ['submitted', 'head review', 'approved', 'done'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'An approved update request is required to edit this evaluation.'
+                ], 403);
             }
         }
 
+        // Preserve existing evaluation status on update
+        $newStatus = $request->status ?? $evaluation->status;
 
         $evaluation->update([
             'supplier_name'   => $request->supplier_name ?? $evaluation->supplier_name,
@@ -1089,17 +1074,16 @@ public function update(Request $request, $id)
             'covered_period'  => $request->covered_period ?? $evaluation->covered_period,
             'period_year'     => $request->period_year ?? $evaluation->period_year,
             'office_id'       => $request->office_id ?? $evaluation->office_id,
-            'status'          => $newStatus,
+            'status'          => $evaluation->status,
         ]);
 
-
-        if ($requestRecord?->status === 'approved') {
-            $requestRecord->update([
+        // Update all approved requests for this evaluation to done
+        Requests::where('evaluation_id', $evaluation->id)
+            ->where('status', 'approved')
+            ->update([
                 'status'      => 'done',
                 'status_date' => now(),
             ]);
-        }
-
 
         foreach ($request->criteria_scores ?? [] as $score) {
             CriteriaScore::updateOrCreate(
@@ -1114,9 +1098,7 @@ public function update(Request $request, $id)
             );
         }
 
-
         if ($user->isEndUser() && !empty($request->evaluator)) {
-
             $preparedBy = DigitalApproval::updateOrCreate(
                 [
                     'evaluation_id' => $evaluation->id,
@@ -1132,25 +1114,20 @@ public function update(Request $request, $id)
             $image = $request->evaluator['image'] ?? null;
 
             if (!empty($image) && str_contains($image, 'data:image')) {
-
                 $imageData = base64_decode(
                     preg_replace('#^data:image/\w+;base64,#i', '', $image)
                 );
 
                 if ($imageData !== false) {
-
                     if (!empty($preparedBy->image)) {
                         $oldPath = str_replace('/storage/', '', $preparedBy->image);
-
                         if (Storage::disk('public')->exists($oldPath)) {
                             Storage::disk('public')->delete($oldPath);
                         }
                     }
 
                     $fileName = 'photos/photo_signature/' . Str::uuid() . '.png';
-
                     Storage::disk('public')->put($fileName, $imageData);
-
                     $preparedBy->update([
                         'image' => '/storage/' . $fileName,
                     ]);
@@ -1158,17 +1135,14 @@ public function update(Request $request, $id)
             }
         }
 
-
         if ($user->isHead() || $user->role === 'presentative_staff') {
-
             $office = $evaluation->office;
-
-            $headUser = User::where('office_id', $office->id)
-                ->where('role', 'head')
-                ->first();
+            $headUser = $office
+                ? User::where('office_id', $office->id)->where('role', 'head')->first()
+                : null;
 
             if (!$headUser) {
-                throw new \Exception('Head user not found for this office.');
+                $headUser = $user;
             }
 
 

@@ -866,7 +866,34 @@ async function updateEvaluation(id) {
         const evaluation = data.evaluation;
         const evaluator = data.prepared_by;
 
+        window.currentEditEvaluationId = id;
         currentEditEvaluationId = id;
+
+        // Check if evaluation is locked (submitted/head review/approved/done) and requires an approved update request
+        const currentRole = (window.authUser && window.authUser.role) ? window.authUser.role : (window.userRole || '');
+        const currentRequestStatus = evaluation.latest_request_status;
+        const evalStatus = evaluation.status || '';
+        const isAdminOrPgso = (currentRole === 'pgso' || currentRole === 'administrator' || currentRole === 'admin');
+        const isApprovedRequest = (currentRequestStatus === 'approved');
+        const isLockedStatus = ['submitted', 'head review', 'approved', 'done'].includes(evalStatus);
+
+        if (!isAdminOrPgso && isLockedStatus && !isApprovedRequest) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Update Request Required',
+                    text: 'This evaluation has already been submitted. An approved update request is required to make changes.',
+                    confirmButtonColor: '#4f46e5'
+                });
+            } else {
+                alert('This evaluation has already been submitted. An approved update request is required to make changes.');
+            }
+
+            if (typeof window.viewEvaluation === 'function') {
+                window.viewEvaluation(id);
+            }
+            return;
+        }
 
         // =====================================
         // HEAD AUTHORIZATION
@@ -950,8 +977,8 @@ headLinkBtn.onclick = async function () {
 
     try {
 
-        const currentUserId = window.authUser.id;
-        const currentUserRole = window.authUser.role;
+        const currentUserId = window.authUser?.id;
+        const currentUserRole = window.authUser?.role;
 
         let signatureUserId = data.head_authorization?.user_id;
 
@@ -977,10 +1004,10 @@ if (currentUserRole === 'presentative_staff') {
 
     // NAME = representative staff
     headNameDisplay.textContent =
-        window.authUser.name || 'Representative Staff';
+        window.authUser?.name || 'Representative Staff';
 
     // DESIGNATION = representative staff designation + acting label
-    const userDesignation = window.authUser.designation || 'Representative Staff';
+    const userDesignation = window.authUser?.designation || 'Representative Staff';
 
     headDesignationDisplay.textContent =
         `${userDesignation} / Acting for Head`;
@@ -1057,14 +1084,14 @@ if (currentUserRole === 'presentative_staff') {
         // =====================================
         // ROLE ACCESS
         // =====================================
-        const role = window.userRole;
-        const requestStatus = evaluation.latest_request_status;
-
         const canEdit =
-            role === 'pgso' ||
-            role === 'administrator' ||
-            (role === 'end_user' && requestStatus === 'approved') ||
-            (role === 'head' && requestStatus === 'approved');
+            currentRole === 'pgso' ||
+            currentRole === 'administrator' ||
+            currentRole === 'admin' ||
+            currentRole === 'presentative_staff' ||
+            currentRequestStatus === 'approved' ||
+            currentRequestStatus === 'done' ||
+            !currentRequestStatus;
 
         [
             'update_supplier_name',
@@ -1195,6 +1222,10 @@ if (currentUserRole === 'presentative_staff') {
         // OPEN MODAL
         // =====================================
         modal.classList.remove('hidden');
+
+        if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+            Swal.close();
+        }
 
     } catch (error) {
 

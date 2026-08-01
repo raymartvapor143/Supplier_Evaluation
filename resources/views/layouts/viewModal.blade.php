@@ -783,6 +783,10 @@ async function viewEvaluation(id) {
         document.getElementById('viewEvaluationModal')
             ?.classList.remove('hidden');
 
+        if (typeof Swal !== 'undefined' && Swal.isVisible()) {
+            Swal.close();
+        }
+
     } catch (err) {
         console.error(err);
         alert('Unable to load evaluation.');

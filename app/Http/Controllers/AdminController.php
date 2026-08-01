@@ -64,16 +64,16 @@ public function dashboard(Request $request)
         ->pluck('supplier');
 
     $requestMessages = Requests::with(['evaluation', 'user'])
-        ->where('status', '!=', 'request')
         ->latest()
         ->get()
         ->map(function ($request) {
             return (object)[
-                'type' => 'request',
-                'po_no' => $request->evaluation->po_no ?? 'No PO Number',
-                'status' => $request->status,
-                'created_at' => $request->created_at,
-                'user' => $request->user->name ?? 'Unknown User',
+                'type'          => 'request',
+                'evaluation_id' => $request->evaluation_id ?? ($request->evaluation->id ?? null),
+                'po_no'         => $request->evaluation->po_no ?? 'No PO Number',
+                'status'        => $request->status,
+                'created_at'    => $request->created_at,
+                'user'          => $request->user->name ?? 'Unknown User',
             ];
         });
 
