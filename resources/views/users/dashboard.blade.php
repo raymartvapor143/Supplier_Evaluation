@@ -124,7 +124,7 @@ class="relative bg-white rounded-xl shadow-lg p-4 sm:p-6 w-full transition-trans
 
     <script id="tabSwitcher">
       document.addEventListener('DOMContentLoaded', function() {
-        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabBtns = document.querySelectorAll('.tab-btn[data-tab]');
         const tabContents = document.querySelectorAll('.tab-content');
 
 function animateTableRows(targetContent) {

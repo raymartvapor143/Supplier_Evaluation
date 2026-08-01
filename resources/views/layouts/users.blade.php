@@ -16,18 +16,18 @@
         <!-- Tabs -->
         <div class="flex space-x-2 mb-4 bg-gray-100 p-1 rounded-lg w-fit">
             <button onclick="switchTab('requests')" id="tab-requests"
-                class="tab-btn px-4 py-1 rounded-md text-xs bg-white shadow">
+                class="user-modal-tab-btn px-4 py-1 rounded-md text-xs bg-white shadow">
                 Requests (<span id="count-requests">0</span>)
             </button>
 
             <button onclick="switchTab('active')" id="tab-active"
-                class="tab-btn px-4 py-1 rounded-md text-xs text-gray-500">
+                class="user-modal-tab-btn px-4 py-1 rounded-md text-xs text-gray-500">
                 Active (<span id="count-active">0</span>)
             </button>
 
             <button onclick="switchTab('rejected')" id="tab-rejected"
-                class="tab-btn px-4 py-1 rounded-md text-xs text-gray-500">
-                Rejected / Freeze (<span id="count-rejected">0</span>)
+                class="user-modal-tab-btn px-4 py-1 rounded-md text-xs text-gray-500">
+                Rejected / Freeze / Inactive (<span id="count-rejected">0</span>)
             </button>
         </div>
 
@@ -115,7 +115,7 @@ function switchTab(tab) {
     CURRENT_TAB = tab;
 
     // reset buttons
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.user-modal-tab-btn').forEach(btn => {
         btn.classList.remove('bg-white', 'shadow');
         btn.classList.add('text-gray-500');
     });
@@ -593,7 +593,7 @@ function closeUsersModal() {
 function switchTab(tab) {
     CURRENT_TAB = tab;
 
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.user-modal-tab-btn').forEach(btn => {
         btn.classList.remove('bg-white', 'shadow');
         btn.classList.add('text-gray-500');
     });

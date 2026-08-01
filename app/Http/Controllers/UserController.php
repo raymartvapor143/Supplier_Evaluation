@@ -274,7 +274,7 @@ public function signature(User $user)
     private function rejectedUsersQuery()
     {
         return User::with('office')
-            ->whereIn('status', ['rejected', 'freeze']);
+            ->whereIn('status', ['rejected', 'freeze', 'inactive', 'disabled', 'suspended']);
     }
 
 
@@ -295,7 +295,7 @@ public function fetchAuthorizationUsers()
     return response()->json([
         'pending' => $users->where('status', 'inactive')->values(),
         'active' => $users->where('status', 'active')->values(),
-        'rejected' => $users->whereIn('status', ['rejected', 'freeze'])->values(),
+        'rejected' => $users->whereIn('status', ['rejected', 'freeze', 'inactive', 'disabled', 'suspended'])->values(),
     ]);
 }
 
