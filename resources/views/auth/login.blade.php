@@ -694,9 +694,10 @@ if (error.response) {
                                         <!-- KEEPING ORIGINAL CLASS -->
                                         <div class="office-option px-4 py-3 rounded-xl hover:bg-slate-100 cursor-pointer transition-all duration-150"
                                             data-id="{{ $office->id }}"
-                                            data-name="{{ $office->name }}">
+                                            data-name="{{ $office->name }}"
+                                            data-abbreviation="{{ $office->abbreviation ?? '' }}">
 
-                                            {{ $office->name }}
+                                            {{ $office->name }} @if(!empty($office->abbreviation)) <span class="text-xs text-gray-500 font-normal">({{ $office->abbreviation }})</span> @endif
 
                                         </div>
 
@@ -1685,9 +1686,10 @@ document.addEventListener('DOMContentLoaded', function () {
         let hasMatch = false;
 
         options.forEach(option => {
-            const name = option.dataset.name.toLowerCase();
+            const name = (option.dataset.name || '').toLowerCase();
+            const abbr = (option.dataset.abbreviation || '').toLowerCase();
 
-            if (name.includes(value)) {
+            if (name.includes(value) || abbr.includes(value)) {
                 option.style.display = 'block';
                 hasMatch = true;
             } else {
