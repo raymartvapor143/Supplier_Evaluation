@@ -146,7 +146,8 @@
       text.innerText = 'Scanning Storage...';
 
       try {
-        const res = await axios.get("{{ url('/admin/threat-scanner/scan') }}");
+        const scanUrl = window.location.origin + window.location.pathname.replace(/\/admin\/threat-scanner.*$/, '') + '/admin/threat-scanner/scan';
+        const res = await axios.get(scanUrl);
         const data = res.data;
 
         if (data.status === 'success') {
@@ -157,6 +158,7 @@
           document.getElementById('statThreats').innerText = data.summary.threat_count;
 
           const deleteAllBtn = document.getElementById('deleteAllBtn');
+          const healthBadge = document.getElementById('systemHealthBadge');
           if (data.summary.threat_count > 0) {
             healthBadge.innerHTML = `<span class="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-xs font-bold animate-pulse">⚠️ ${data.summary.threat_count} Threat(s) Found</span>`;
             if (deleteAllBtn) {
@@ -174,10 +176,16 @@
           renderFilesTable();
         }
       } catch (err) {
+        console.error('Threat scan error:', err);
+        if (err.response && (err.response.status === 401 || err.response.status === 419)) {
+          window.location.href = "{{ route('auth.login') }}";
+          return;
+        }
+        const errorMsg = err.response?.data?.message || err.message || 'Failed to run threat scan.';
         tableBody.innerHTML = `
           <tr>
             <td colspan="7" class="py-8 text-center text-red-400 font-semibold">
-              Failed to run threat scan. Please try again.
+              Scan Failed: ${escapeHtml(errorMsg)}
             </td>
           </tr>
         `;
@@ -270,7 +278,8 @@
       if (!confirm.isConfirmed) return;
 
       try {
-        const res = await axios.post("{{ url('/admin/threat-scanner/delete') }}", { file_path: filePath });
+        const deleteUrl = window.location.origin + window.location.pathname.replace(/\/admin\/threat-scanner.*$/, '') + '/admin/threat-scanner/delete';
+        const res = await axios.post(deleteUrl, { file_path: filePath });
         Swal.fire('Deleted!', res.data.message, 'success');
         runThreatScan();
       } catch (err) {
@@ -293,7 +302,8 @@
       if (!confirm.isConfirmed) return;
 
       try {
-        const res = await axios.post("{{ url('/admin/threat-scanner/delete-all') }}");
+        const deleteAllUrl = window.location.origin + window.location.pathname.replace(/\/admin\/threat-scanner.*$/, '') + '/admin/threat-scanner/delete-all';
+        const res = await axios.post(deleteAllUrl);
         Swal.fire('Bulk Removal Complete!', res.data.message, 'success');
         runThreatScan();
       } catch (err) {
