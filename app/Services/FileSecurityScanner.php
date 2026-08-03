@@ -44,6 +44,16 @@ class FileSecurityScanner
     ];
 
     /**
+     * Strict PHP execution tags for binary documents (PDF, DOCX, XLSX, images).
+     * Requires PHP open tags to be structured script blocks rather than arbitrary binary byte sequences inside stream data.
+     */
+    protected static $phpExecutionSignatures = [
+        '/(?:^|\s)[\r\n]*<\?php(?:\s|\/|\$|\?>)/i',
+        '/(?:^|\s)[\r\n]*<\?=(?:\s|\/|\$|\?>)/i',
+        '/<script\s+language\s*=\s*["\']?php/i',
+    ];
+
+    /**
      * Scan an uploaded file before saving.
      */
     public function scanUploadedFile(UploadedFile $file): array
@@ -83,11 +93,16 @@ class FileSecurityScanner
         // 4. Payload Content Inspection (Web Shell & Malicious Code)
         $content = file_get_contents($file->getRealPath(), false, null, 0, 500000); // Read up to 500KB
         if ($content !== false) {
-            foreach (static::$dangerousSignatures as $pattern) {
+            // For binary document files (PDF, Images, Office Docs), only check for PHP tags.
+            // Generic function names (eval, system, base64_decode) occur naturally in PDF binary/font stream data.
+            $isBinaryDoc = in_array($extension, ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'webp'], true);
+            $patternsToTest = $isBinaryDoc ? static::$phpExecutionSignatures : static::$dangerousSignatures;
+
+            foreach ($patternsToTest as $pattern) {
                 if (preg_match($pattern, $content)) {
                     return [
                         'safe' => false,
-                        'reason' => 'Malicious executable code / web shell signature detected inside file content.'
+                        'reason' => 'Malicious executable code / web shell signature detected inside file content (' . htmlspecialchars($pattern) . ').'
                     ];
                 }
             }
@@ -145,7 +160,10 @@ class FileSecurityScanner
                 // Scan content for php/shell payloads
                 $content = @file_get_contents($filePath, false, null, 0, 500000);
                 if ($content !== false) {
-                    foreach (static::$dangerousSignatures as $pattern) {
+                    $isBinaryDoc = in_array($extension, ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'jpg', 'jpeg', 'png', 'webp'], true);
+                    $patternsToTest = $isBinaryDoc ? static::$phpExecutionSignatures : static::$dangerousSignatures;
+
+                    foreach ($patternsToTest as $pattern) {
                         if (preg_match($pattern, $content)) {
                             $status = 'THREAT';
                             $reasons[] = 'Web Shell / PHP Payload detected';
