@@ -928,9 +928,117 @@ if (error.response) {
 </div>
 
 
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>
-
 <script>
+let currentPuzzleData = null;
+let isPuzzleVerified = false;
+
+async function loadPuzzleCaptcha() {
+    isPuzzleVerified = false;
+    currentPuzzleData = null;
+
+    const statusEl = document.getElementById('puzzleStatus');
+    const slider = document.getElementById('puzzleSlider');
+    const canvas = document.getElementById('puzzleCanvas');
+    const pieceCanvas = document.getElementById('pieceCanvas');
+
+    if (!canvas || !pieceCanvas || !slider) return;
+
+    statusEl.innerHTML = '<span class="text-gray-400">Loading security puzzle...</span>';
+    statusEl.className = "text-center text-xs font-medium mt-2 text-gray-500";
+    slider.value = 0;
+    slider.disabled = true;
+    pieceCanvas.style.transform = 'translateX(0px)';
+
+    try {
+        const res = await axios.get('/forgot-password/puzzle');
+        currentPuzzleData = res.data;
+
+        const ctx = canvas.getContext('2d');
+        const pCtx = pieceCanvas.getContext('2d');
+        const w = 300, h = 150;
+        const pw = 45, ph = 45;
+        const targetX = currentPuzzleData.target_x;
+        const targetY = currentPuzzleData.target_y;
+
+        // Render colorful procedural background
+        const grad = ctx.createLinearGradient(0, 0, w, h);
+        grad.addColorStop(0, '#1e293b');
+        grad.addColorStop(0.5, '#0f172a');
+        grad.addColorStop(1, '#1e1b4b');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Add geometric pattern details
+        const seed = currentPuzzleData.seed || 1234;
+        for (let i = 0; i < 6; i++) {
+            ctx.beginPath();
+            ctx.arc((seed * (i + 1) * 37) % w, (seed * (i + 1) * 73) % h, 25 + (i * 8), 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${(seed + i * 60) % 360}, 75%, 55%, 0.45)`;
+            ctx.fill();
+        }
+
+        // Draw grid overlay lines
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < w; x += 20) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        }
+        for (let y = 0; y < h; y += 20) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
+
+        // Draw header text on canvas
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.fillText('SUPPLIER EVALUATION SECURITY PUZZLE', 12, 22);
+
+        // Copy original piece graphic to pieceCanvas
+        pCtx.clearRect(0, 0, pw, ph);
+        pCtx.drawImage(canvas, targetX, targetY, pw, ph, 0, 0, pw, ph);
+
+        // Highlight border of floating piece
+        pCtx.lineWidth = 2;
+        pCtx.strokeStyle = '#3b82f6';
+        pCtx.strokeRect(0, 0, pw, ph);
+
+        // Draw dark cutout target box on main canvas
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(targetX, targetY, pw, ph);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#60a5fa';
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(targetX, targetY, pw, ph);
+        ctx.setLineDash([]);
+
+        // Position pieceCanvas vertically
+        pieceCanvas.style.top = targetY + 'px';
+        pieceCanvas.style.left = '0px';
+
+        slider.disabled = false;
+        slider.max = w - pw;
+        statusEl.innerHTML = 'Slide the puzzle piece to fit the target slot';
+        statusEl.className = "text-center text-xs font-semibold mt-2 text-blue-600";
+
+        slider.oninput = () => {
+            const val = parseInt(slider.value, 10);
+            pieceCanvas.style.transform = `translateX(${val}px)`;
+
+            if (Math.abs(val - targetX) <= 6) {
+                isPuzzleVerified = true;
+                statusEl.innerHTML = '✓ Puzzle Aligned! You can submit now.';
+                statusEl.className = "text-center text-xs font-bold mt-2 text-emerald-600";
+            } else {
+                isPuzzleVerified = false;
+                statusEl.innerHTML = 'Slide to align the puzzle piece';
+                statusEl.className = "text-center text-xs font-semibold mt-2 text-blue-600";
+            }
+        };
+
+    } catch (e) {
+        statusEl.innerHTML = '<span class="text-red-500">Failed to load puzzle. Please click Refresh.</span>';
+    }
+}
+
 async function showForgotPasswordModal(event) {
 
     event.preventDefault();
@@ -1098,11 +1206,8 @@ async function showForgotPasswordModal(event) {
 
 
             <input
-
                 id="forgotEmail"
-
                 type="email"
-
                 class="
                     w-full
                     px-5
@@ -1115,221 +1220,104 @@ async function showForgotPasswordModal(event) {
                     focus:border-blue-500
                     outline-none
                     transition"
-
                 placeholder="you@example.com"
-
                 autocomplete="email"
-
             >
 
+            <!-- Custom Interactive Puzzle CAPTCHA Container -->
+            <div class="mt-5 border border-gray-200 rounded-2xl p-4 bg-slate-50/70 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        Drag Puzzle Verification
+                    </span>
+                    <button type="button" id="refreshPuzzleBtn" onclick="loadPuzzleCaptcha()" class="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 transition">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Refresh Puzzle
+                    </button>
+                </div>
 
+                <div class="relative w-[300px] h-[150px] mx-auto rounded-xl overflow-hidden shadow-md border border-slate-300 bg-slate-900 select-none">
+                    <canvas id="puzzleCanvas" width="300" height="150" class="block w-full h-full"></canvas>
+                    <canvas id="pieceCanvas" width="45" height="45" class="absolute top-0 left-0 pointer-events-none transition-transform duration-75" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));"></canvas>
+                </div>
 
-
-            <div
-
-                id="recaptcha-container"
-
-                class="
-                    mt-5
-                    flex
-                    justify-center">
-
+                <div class="mt-3 relative w-[300px] mx-auto">
+                    <input type="range" id="puzzleSlider" min="0" max="255" value="0"
+                        class="w-full h-9 accent-blue-600 bg-gray-200 rounded-lg cursor-pointer appearance-none outline-none focus:ring-2 focus:ring-blue-400">
+                    <div id="puzzleStatus" class="text-center text-xs font-semibold mt-2 text-gray-500">
+                        Slide the puzzle piece to fit the target slot
+                    </div>
+                </div>
             </div>
 
-
-
         </div>
-
         `,
 
-
-
         didOpen: () => {
-
-
-            const interval = setInterval(() => {
-
-
-                if(typeof grecaptcha !== "undefined"){
-
-
-                    clearInterval(interval);
-
-
-
-                    widgetId = grecaptcha.render(
-
-                        "recaptcha-container",
-
-                        {
-
-                            sitekey: "6Ldy5m0tAAAAAE26f0hmzwXwpFq39eJ54-N-JIYg"
-
-                        }
-
-                    );
-
-
-                }
-
-
-            },200);
-
-
+            loadPuzzleCaptcha();
         },
-
-
-
-        willClose: () => {
-
-
-            if(
-
-                typeof grecaptcha !== "undefined"
-
-                &&
-
-                widgetId !== null
-
-            ){
-
-                grecaptcha.reset(widgetId);
-
-            }
-
-
-        },
-
-
 
         preConfirm: () => {
-
-
-            const email =
-                document
-                .getElementById("forgotEmail")
-                .value
-                .trim();
-
-
+            const email = document.getElementById("forgotEmail").value.trim();
 
             if(!email){
-
-
-                Swal.showValidationMessage(
-                    "Please enter your email address."
-                );
-
-
+                Swal.showValidationMessage("Please enter your email address.");
                 return false;
-
-
             }
 
-
-
-            const emailPattern =
-                /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-
-
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if(!emailPattern.test(email)){
-
-
-                Swal.showValidationMessage(
-                    "Please enter a valid email address."
-                );
-
-
+                Swal.showValidationMessage("Please enter a valid email address.");
                 return false;
-
-
             }
 
+            const slider = document.getElementById('puzzleSlider');
+            const sliderVal = slider ? parseInt(slider.value, 10) : 0;
 
-
-            const captcha =
-                grecaptcha.getResponse(widgetId);
-
-
-
-            if(!captcha){
-
-
-                Swal.showValidationMessage(
-                    "Please complete the CAPTCHA verification."
-                );
-
-
+            if(!currentPuzzleData || !currentPuzzleData.token){
+                Swal.showValidationMessage("Security puzzle loading failed. Please refresh puzzle.");
                 return false;
-
-
             }
 
-
+            if (!isPuzzleVerified && Math.abs(sliderVal - currentPuzzleData.target_x) > 8) {
+                Swal.showValidationMessage("Please solve the puzzle by sliding the piece into position.");
+                return false;
+            }
 
             return {
-
                 email,
-
-                captcha
-
+                captcha_token: currentPuzzleData.token,
+                captcha_x: sliderVal
             };
-
-
         }
-
-
     });
-
-
 
     if(!formData) return;
 
-
-
     try {
-
-
-
         Swal.fire({
-
             title:"Sending Reset Link",
-
             html:`
-
                 <p class="text-gray-500">
-
                     Please wait while we process your request...
-
                 </p>
-
             `,
-
             allowOutsideClick:false,
-
             didOpen:()=>{
-
                 Swal.showLoading();
-
             }
-
         });
 
-
-
         const response = await axios.post(
-
             "/forgot-password",
-
             {
-
                 email: formData.email,
-
-                captcha: formData.captcha
-
+                captcha_token: formData.captcha_token,
+                captcha_x: formData.captcha_x
             }
-
         );
 
 

@@ -13,62 +13,63 @@ use App\Models\User;
 class ForgotPasswordController extends Controller
 {
     /**
+     * Generate puzzle captcha parameters
+     */
+    public function getPuzzle()
+    {
+        $token = Str::random(32);
+        $targetX = rand(60, 210);
+        $targetY = rand(25, 80);
+        $seed = rand(1000, 9999);
+
+        session(['puzzle_captcha_' . $token => [
+            'x' => $targetX,
+            'y' => $targetY
+        ]]);
+
+        return response()->json([
+            'token' => $token,
+            'target_x' => $targetX,
+            'target_y' => $targetY,
+            'seed' => $seed
+        ]);
+    }
+
+    /**
      * Send password reset link
      */
     public function send(Request $request)
     {
 
         $request->validate([
-            'email'   => ['required', 'email'],
-            'captcha' => ['required']
+            'email'         => ['required', 'email'],
+            'captcha_token' => ['required'],
+            'captcha_x'     => ['required', 'numeric']
         ]);
 
 
         // ============================
-        // VERIFY GOOGLE reCAPTCHA
+        // VERIFY PUZZLE CAPTCHA
         // ============================
 
-        try {
+        $puzzleData = session('puzzle_captcha_' . $request->captcha_token);
 
-            $captchaResponse = Http::timeout(10)
-                ->asForm()
-                ->post(
-                    'https://www.google.com/recaptcha/api/siteverify',
-                    [
-                        'secret'   => config('services.recaptcha.secret'),
-                        'response' => $request->captcha,
-                        'remoteip' => $request->ip(),
-                    ]
-                );
-
-
-            $captchaResult = $captchaResponse->json();
-
-
-            if (
-                !$captchaResponse->successful()
-                ||
-                !($captchaResult['success'] ?? false)
-            ) {
-
-                return response()->json([
-                    'message' =>
-                    'Please verify that you are not a robot.'
-                ], 422);
-
-            }
-
-
-        } catch (\Exception $e) {
-
-
+        if (!$puzzleData || !isset($puzzleData['x'])) {
             return response()->json([
-                'message' =>
-                'CAPTCHA verification failed. Please try again.'
-            ], 500);
-
-
+                'message' => 'CAPTCHA session expired. Please refresh the puzzle and try again.'
+            ], 422);
         }
+
+        $expectedX = (int) $puzzleData['x'];
+        $userX = (int) $request->captcha_x;
+
+        if (abs($expectedX - $userX) > 8) {
+            return response()->json([
+                'message' => 'Puzzle piece position is incorrect. Please align the puzzle correctly.'
+            ], 422);
+        }
+
+        session()->forget('puzzle_captcha_' . $request->captcha_token);
 
 
 

@@ -23,6 +23,11 @@ use Illuminate\Support\Facades\Route;
 
 
 
+Route::get(
+    '/forgot-password/puzzle',
+    [ForgotPasswordController::class, 'getPuzzle']
+);
+
 Route::post(
     '/forgot-password',
     [ForgotPasswordController::class,'send']
