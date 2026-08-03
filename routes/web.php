@@ -139,6 +139,7 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::get('/admin/threat-scanner', [AdminController::class, 'threatScannerView'])->name('admin.threat_scanner');
     Route::get('/admin/threat-scanner/scan', [AdminController::class, 'runThreatScan']);
     Route::post('/admin/threat-scanner/delete', [AdminController::class, 'deleteThreatFile']);
+    Route::post('/admin/threat-scanner/delete-all', [AdminController::class, 'deleteAllThreats']);
 
     Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 

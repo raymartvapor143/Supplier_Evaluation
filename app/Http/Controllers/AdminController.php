@@ -660,4 +660,48 @@ public function downloadSemesterSummary(Request $request)
             'message' => 'File not found or already deleted.'
         ], 440);
     }
+
+    /**
+     * Delete all identified threats in bulk
+     */
+    public function deleteAllThreats()
+    {
+        $scanner = new \App\Services\FileSecurityScanner();
+
+        $storagePath = storage_path('app');
+        $publicUploads = public_path('uploads');
+
+        $scannedFiles = array_merge(
+            $scanner->scanDirectory($storagePath),
+            $scanner->scanDirectory($publicUploads)
+        );
+
+        $deletedCount = 0;
+        foreach ($scannedFiles as $file) {
+            if ($file['status'] === 'THREAT') {
+                $filePath = base_path($file['path']);
+                if (file_exists($filePath) && is_file($filePath)) {
+                    @unlink($filePath);
+                    $deletedCount++;
+                }
+            }
+        }
+
+        if ($deletedCount > 0) {
+            ActivityLog::create([
+                'user_id'     => auth()->id(),
+                'role'        => auth()->user()->role,
+                'activity'    => 'Bulk Threat Removal',
+                'description' => "Bulk deleted {$deletedCount} detected threat file(s).",
+            ]);
+
+            return response()->json([
+                'message' => "Successfully removed {$deletedCount} threat file(s) from server."
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'No active threats found to delete.'
+        ]);
+    }
 }
