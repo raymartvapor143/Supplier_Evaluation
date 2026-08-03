@@ -141,6 +141,7 @@ class ForgotPasswordController extends Controller
 
         } catch (\Exception $e) {
 
+            \Illuminate\Support\Facades\Log::error('Password reset email error: ' . $e->getMessage());
 
             return response()->json([
                 'message' =>

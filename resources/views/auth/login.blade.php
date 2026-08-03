@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function () {
               <input type="checkbox" hidden class="rounded text-blue-600">
               {{-- Remember me --}}
             </label>
-<a href="#" hidden
+<a href="#"
    onclick="showForgotPasswordModal(event)"
    class="text-blue-600 hover:underline">
     Forgot password?
