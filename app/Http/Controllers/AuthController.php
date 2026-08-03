@@ -123,7 +123,15 @@ public function register(Request $request)
 
         $file = $request->file('authorization_letter');
 
-        $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $scanner = new \App\Services\FileSecurityScanner();
+        $scanResult = $scanner->scanUploadedFile($file);
+        if (!$scanResult['safe']) {
+            return response()->json([
+                'message' => 'Security Threat Blocked: ' . $scanResult['reason']
+            ], 422);
+        }
+
+        $fileName = Str::uuid() . '.' . strtolower($file->getClientOriginalExtension());
 
         $filePath = $file->storeAs(
             'authorization_letters',

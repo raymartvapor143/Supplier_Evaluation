@@ -54,10 +54,18 @@ public function store(Request $request)
 
 
     if ($request->hasFile('pdf_po')) {
+        $file = $request->file('pdf_po');
+        $scanner = new \App\Services\FileSecurityScanner();
+        $scanResult = $scanner->scanUploadedFile($file);
+        if (!$scanResult['safe']) {
+            return response()->json([
+                'message' => 'Security Threat Blocked: ' . $scanResult['reason']
+            ], 422);
+        }
 
         $filename = time() . '_' . $po->po_no . '.pdf';
 
-        $path = $request->file('pdf_po')->storeAs(
+        $path = $file->storeAs(
             'private/po_pdf',
             $filename,
             'local'
@@ -279,13 +287,19 @@ public function update(Request $request, $id)
         |--------------------------------------------------------------------------
         */
         if ($request->hasFile('pdf_po')) {
+            $file = $request->file('pdf_po');
+            $scanner = new \App\Services\FileSecurityScanner();
+            $scanResult = $scanner->scanUploadedFile($file);
+            if (!$scanResult['safe']) {
+                return response()->json([
+                    'message' => 'Security Threat Blocked: ' . $scanResult['reason']
+                ], 422);
+            }
 
             // Delete previous PDF if it still exists
             if ($po->pdf_po && Storage::disk('local')->exists($po->pdf_po)) {
                 Storage::disk('local')->delete($po->pdf_po);
             }
-
-            $file = $request->file('pdf_po');
 
             $filename = time() . '_' .
                 preg_replace('/[^A-Za-z0-9_-]/', '_', $po->po_no) .
@@ -372,13 +386,20 @@ public function uploadPdf(Request $request, $id)
         $po = PurchaseOrder::findOrFail($id);
 
         if ($request->hasFile('pdf_po')) {
+            $file = $request->file('pdf_po');
+
+            $scanner = new \App\Services\FileSecurityScanner();
+            $scanResult = $scanner->scanUploadedFile($file);
+            if (!$scanResult['safe']) {
+                return response()->json([
+                    'message' => 'Security Threat Blocked: ' . $scanResult['reason']
+                ], 422);
+            }
 
             // delete old file safely
             if ($po->pdf_po && Storage::disk('local')->exists($po->pdf_po)) {
                 Storage::disk('local')->delete($po->pdf_po);
             }
-
-            $file = $request->file('pdf_po');
 
             $filename = time() . '_' . $po->po_no . '.pdf';
 

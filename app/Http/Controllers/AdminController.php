@@ -575,4 +575,89 @@ public function downloadSemesterSummary(Request $request)
 
     return $pdf->download('supplier-semester-evaluations-summary.pdf');
 }
+
+    /**
+     * Threat & Security Scanner View
+     */
+    public function threatScannerView()
+    {
+        return view('admin.threat-scanner');
+    }
+
+    /**
+     * Run real-time threat scan across uploaded files
+     */
+    public function runThreatScan()
+    {
+        $scanner = new \App\Services\FileSecurityScanner();
+
+        $storagePath = storage_path('app');
+        $publicUploads = public_path('uploads');
+
+        $scannedFiles = array_merge(
+            $scanner->scanDirectory($storagePath),
+            $scanner->scanDirectory($publicUploads)
+        );
+
+        $totalFiles = count($scannedFiles);
+        $threatCount = 0;
+        $cleanCount = 0;
+
+        foreach ($scannedFiles as $file) {
+            if ($file['status'] === 'THREAT') {
+                $threatCount++;
+            } else {
+                $cleanCount++;
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'summary' => [
+                'total_files'  => $totalFiles,
+                'clean_count'  => $cleanCount,
+                'threat_count' => $threatCount,
+                'system_status'=> $threatCount > 0 ? 'THREAT_DETECTED' : 'SECURE'
+            ],
+            'files' => $scannedFiles
+        ]);
+    }
+
+    /**
+     * Delete/quarantine threat file
+     */
+    public function deleteThreatFile(Request $request)
+    {
+        $request->validate([
+            'file_path' => 'required|string'
+        ]);
+
+        $filePath = base_path($request->file_path);
+
+        // Prevent directory traversal attacks
+        if (strpos(realpath($filePath), base_path()) !== 0) {
+            return response()->json([
+                'message' => 'Invalid file path.'
+            ], 400);
+        }
+
+        if (file_exists($filePath) && is_file($filePath)) {
+            @unlink($filePath);
+
+            ActivityLog::create([
+                'user_id'     => auth()->id(),
+                'role'        => auth()->user()->role,
+                'activity'    => 'Security Threat Deleted',
+                'description' => "Deleted suspicious/threat file: {$request->file_path}",
+            ]);
+
+            return response()->json([
+                'message' => 'Threat file successfully deleted and removed from server.'
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'File not found or already deleted.'
+        ], 440);
+    }
 }

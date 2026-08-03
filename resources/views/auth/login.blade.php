@@ -950,7 +950,7 @@ async function loadPuzzleCaptcha() {
     pieceCanvas.style.transform = 'translateX(0px)';
 
     try {
-        const res = await axios.get('/forgot-password/puzzle');
+        const res = await axios.get("{{ url('/forgot-password/puzzle') }}");
         currentPuzzleData = res.data;
 
         const ctx = canvas.getContext('2d');
@@ -1312,7 +1312,7 @@ async function showForgotPasswordModal(event) {
         });
 
         const response = await axios.post(
-            "/forgot-password",
+            "{{ url('/forgot-password') }}",
             {
                 email: formData.email,
                 captcha_token: formData.captcha_token,

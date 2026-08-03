@@ -337,15 +337,15 @@ function toggleUsersDropdown() {
         </button>
 
         <div id="evaluationsMenu" class="hidden ml-6 mt-1 flex flex-col gap-1">
-          <a href="#" id="toggleBack" class="sub-link">Evaluate</a>
+          <a href="javascript:void(0)" id="toggleBack" onclick="navigateOrRun('toggleBack', 'evaluate')" class="sub-link">Evaluate</a>
           <a href="{{ route('bulk.page') }}" class="sub-link">Bulk Evaluate</a>
         </div>
       </div>
 
       @if(auth()->user()->isAdmin() || auth()->user()->isEndUser())
       <!-- ================= REQUESTS ================= -->
-      <a href="#"
-         onclick="openRequestModal()"
+      <a href="javascript:void(0)"
+         onclick="navigateOrRun('openRequestModal')"
          class="sidebar-link">
 
         <i class="ri-mail-line"></i>
@@ -355,7 +355,7 @@ function toggleUsersDropdown() {
       </a>
 
       <!-- ================= P.O ================= -->
-      <a href="#" onclick="openPOModal_v2()" class="sidebar-link">
+      <a href="javascript:void(0)" onclick="navigateOrRun('openPOModal_v2')" class="sidebar-link">
         <i class="ri-file-list-3-line"></i>
         <span class="sidebar-text">
           P.O List <span id="POCount" class="badge">0</span>
@@ -368,33 +368,38 @@ function toggleUsersDropdown() {
       <!-- ================= ADMIN SECTION ================= -->
       <div class="mt-3 pt-3 border-t border-orange-100 flex flex-col gap-1">
 
-        <a href="#" onclick="openOffice()" class="sidebar-link">
+        <a href="javascript:void(0)" onclick="navigateOrRun('openOffice')" class="sidebar-link">
           <i class="ri-building-2-line"></i>
           <span class="sidebar-text">
             Offices <span id="officeCount" class="badge">0</span>
           </span>
         </a>
 
-        <a href="#" onclick="openImportOptions()" class="sidebar-link">
+        <a href="javascript:void(0)" onclick="navigateOrRun('openImportOptions')" class="sidebar-link">
           <i class="ri-upload-2-line"></i>
           <span class="sidebar-text">Import Files</span>
         </a>
 
-        <a href="#" id="toggleAnalytics" class="sidebar-link">
+        <a href="javascript:void(0)" id="toggleAnalytics" onclick="navigateOrRun('toggleAnalytics', 'analytics')" class="sidebar-link">
           <i class="ri-bar-chart-line"></i>
           <span class="sidebar-text">Analytics</span>
         </a>
 
-        <a href="#" onclick="openRecycleBinModal()" class="sidebar-link">
+        <a href="javascript:void(0)" onclick="navigateOrRun('openRecycleBinModal')" class="sidebar-link">
           <i class="ri-delete-bin-line"></i>
           <span class="sidebar-text">
             Recycle Bin <span id="deletedItemsCount" class="badge badge-red">0</span>
           </span>
         </a>
 
-        <a href="#" onclick="openActivityLogs()" class="sidebar-link">
+        <a href="javascript:void(0)" onclick="navigateOrRun('openActivityLogs')" class="sidebar-link">
           <i class="ri-history-line"></i>
           <span class="sidebar-text">Activity Logs</span>
+        </a>
+
+        <a href="{{ route('admin.threat_scanner') }}" class="sidebar-link text-red-600 font-semibold hover:bg-red-50">
+          <i class="ri-shield-keyhole-line text-red-600"></i>
+          <span class="sidebar-text">Threat Scanner</span>
         </a>
       </div>
 
@@ -410,11 +415,11 @@ function toggleUsersDropdown() {
 
         <div id="usersMenu" class="hidden ml-6 mt-1 flex flex-col gap-1">
 
-          <a href="#" onclick="openUsersModal()" class="sub-link">
+          <a href="javascript:void(0)" onclick="navigateOrRun('openUsersModal')" class="sub-link">
             End Users <span id="pendingUsersCount" class="badge">0</span>
           </a>
 
-          <a href="#" onclick="openAuthorizeUsersModal()" class="sub-link">
+          <a href="javascript:void(0)" onclick="navigateOrRun('openAuthorizeUsersModal')" class="sub-link">
             Authorization
           </a>
         </div>
@@ -482,7 +487,64 @@ function toggleUsersDropdown() {
 </style>
 
 <script>
+window.navigateOrRun = function(actionFn, actionName) {
+  const isDashboard = window.location.pathname.includes('admin-dashboard') || window.location.pathname === '/';
+
+  if (actionFn === 'toggleBack' || actionName === 'evaluate') {
+    if (isDashboard) {
+      const flipInner = document.getElementById('flipInner');
+      const backSide = flipInner ? flipInner.querySelector('.back') : null;
+      if (flipInner) flipInner.style.transform = 'rotateY(0deg)';
+      if (backSide) setTimeout(() => backSide.classList.add('hidden'), 700);
+    } else {
+      window.location.href = "{{ route('admin.dashboard') }}?action=evaluate";
+    }
+    return;
+  }
+
+  if (actionFn === 'toggleAnalytics' || actionName === 'analytics') {
+    if (isDashboard) {
+      const flipInner = document.getElementById('flipInner');
+      const backSide = flipInner ? flipInner.querySelector('.back') : null;
+      if (backSide) backSide.classList.remove('hidden');
+      if (flipInner) flipInner.style.transform = 'rotateY(180deg)';
+      setTimeout(() => {
+        if (typeof initBarChart === 'function') initBarChart();
+        if (typeof initLineChart === 'function') initLineChart();
+        if (typeof initSemesterChart === 'function') initSemesterChart();
+      }, 300);
+    } else {
+      window.location.href = "{{ route('admin.dashboard') }}?action=analytics";
+    }
+    return;
+  }
+
+  if (typeof window[actionFn] === 'function') {
+    window[actionFn]();
+  } else {
+    const dashboardUrl = "{{ route('admin.dashboard') }}";
+    window.location.href = dashboardUrl + '?action=' + (actionName || actionFn);
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const actionParam = urlParams.get('action');
+  if (actionParam) {
+    setTimeout(() => {
+      if (actionParam === 'analytics') {
+        window.navigateOrRun('toggleAnalytics', 'analytics');
+      } else if (actionParam === 'evaluate') {
+        window.navigateOrRun('toggleBack', 'evaluate');
+      } else if (typeof window[actionParam] === 'function') {
+        window[actionParam]();
+      } else {
+        const el = document.getElementById(actionParam);
+        if (el) el.click();
+      }
+    }, 400);
+  }
 
   const sidebar = document.getElementById('sidebar');
   const sidebarOverlay = document.getElementById('sidebarOverlay');

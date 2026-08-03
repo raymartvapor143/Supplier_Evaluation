@@ -135,6 +135,11 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
 
     Route::get('/admin/activity-logs', [AdminController::class, 'activityLogs']);
 
+    // Threat Scanner & Security Routes
+    Route::get('/admin/threat-scanner', [AdminController::class, 'threatScannerView'])->name('admin.threat_scanner');
+    Route::get('/admin/threat-scanner/scan', [AdminController::class, 'runThreatScan']);
+    Route::post('/admin/threat-scanner/delete', [AdminController::class, 'deleteThreatFile']);
+
     Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
     Route::get('/admin-dashboard/data', [AdminController::class, 'fetchData']);
