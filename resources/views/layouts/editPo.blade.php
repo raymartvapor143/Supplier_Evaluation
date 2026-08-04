@@ -248,8 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-let currentPoId = null;
-let cachedOffices_v2 = [];
 let window__currentPdfUrl_v2 = null;
 
 function renderPdfContainer_v2() {
