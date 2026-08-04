@@ -721,6 +721,17 @@ Swal.fire({
     timer: 2000,
     showConfirmButton: false
 });
+openPOModal_v2();
+@endif
+
+@if(session('error_pdf'))
+Swal.fire({
+    icon: 'error',
+    title: 'Upload Failed!',
+    text: "{{ session('error_pdf') }}",
+    confirmButtonText: 'OK'
+});
+openPOModal_v2();
 @endif
 
 @if(session('po_error'))
