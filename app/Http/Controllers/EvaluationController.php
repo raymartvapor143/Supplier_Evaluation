@@ -1049,21 +1049,48 @@ public function update(Request $request, $id)
 
         /** @var User $user */
         if (!$user->isAdmin() && !$user->isPgso()) {
-            $hasApprovedRequest = Requests::where('evaluation_id', $evaluation->id)
-                ->where('user_id', $user->id)
-                ->where('status', 'approved')
-                ->exists();
 
-            if (!$hasApprovedRequest && in_array($evaluation->status, ['submitted', 'head review', 'approved', 'done'])) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'An approved update request is required to edit this evaluation.'
-                ], 403);
+            // Head and presentative_staff can directly evaluate 'head review' evaluations
+            $canDirectEvaluate = ($user->isHead() || $user->role === 'presentative_staff')
+                && $evaluation->status === 'head review';
+
+            if (!$canDirectEvaluate) {
+                $hasApprovedRequest = Requests::where('evaluation_id', $evaluation->id)
+                    ->where('user_id', $user->id)
+                    ->where('status', 'approved')
+                    ->exists();
+
+                if (!$hasApprovedRequest && in_array($evaluation->status, ['submitted', 'head review', 'approved', 'done'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'An approved update request is required to edit this evaluation.'
+                    ], 403);
+                }
             }
         }
 
-        // Preserve existing evaluation status on update
-        $newStatus = $request->status ?? $evaluation->status;
+        // Determine new status based on user role
+        $hasApprovedUpdateRequest = Requests::where('evaluation_id', $evaluation->id)
+            ->where('user_id', auth()->id())
+            ->where('status', 'approved')
+            ->where('request_type', 'update')
+            ->exists();
+
+        if ($user->isEndUser()) {
+            if ($hasApprovedUpdateRequest) {
+                // End user updating via approved request → keep status unchanged
+                $newStatus = $evaluation->status;
+            } else {
+                // End user doing a fresh evaluation from pending → moves to head review
+                $newStatus = 'head review';
+            }
+        } elseif ($user->isHead() || $user->role === 'presentative_staff') {
+            // Head or presentative staff evaluates a head review evaluation → moves to submitted
+            $newStatus = 'submitted';
+        } else {
+            // Admin / PGSO / others → preserve existing status
+            $newStatus = $evaluation->status;
+        }
 
         $evaluation->update([
             'supplier_name'   => $request->supplier_name ?? $evaluation->supplier_name,
@@ -1074,7 +1101,7 @@ public function update(Request $request, $id)
             'covered_period'  => $request->covered_period ?? $evaluation->covered_period,
             'period_year'     => $request->period_year ?? $evaluation->period_year,
             'office_id'       => $request->office_id ?? $evaluation->office_id,
-            'status'          => $evaluation->status,
+            'status'          => $newStatus,
         ]);
 
         // Update all approved requests for this evaluation to done
@@ -1210,7 +1237,7 @@ public function update(Request $request, $id)
 public function evaluationsList(Request $request)
 {
     $user = $request->user();
-    $status = strtoupper($request->query('status', 'PENDING'));
+    $status = strtolower($request->query('status', 'pending'));
 
     $query = Evaluation::with([
         'digitalApprovals',

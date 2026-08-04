@@ -9,8 +9,8 @@
 <script id="ajax-evaluations-realtime">
 document.addEventListener('DOMContentLoaded', function () {
     let rowCache = {
-    PENDING: new Set(),
-    'HEAD REVIEW': new Set(),
+    pending: new Set(),
+    'head review': new Set(),
     submitted: new Set()
 };
 
@@ -20,32 +20,32 @@ document.addEventListener('DOMContentLoaded', function () {
     const clearButton = document.getElementById('clearFilters');
 
     const tbodyCache = {
-        PENDING: document.querySelector('#pendingTable tbody'),
-        'HEAD REVIEW': document.querySelector('#reviewTable tbody'),
+        pending: document.querySelector('#pendingTable tbody'),
+        'head review': document.querySelector('#reviewTable tbody'),
         submitted: document.querySelector('#approvedTable tbody')
     };
 
     const tables = {
-        'PENDING': document.querySelector('#pendingTable tbody'),
-        'HEAD REVIEW': document.querySelector('#reviewTable tbody'),
+        'pending': document.querySelector('#pendingTable tbody'),
+        'head review': document.querySelector('#reviewTable tbody'),
         'submitted': document.querySelector('#approvedTable tbody')
     };
 
     const paginationContainers = {
-        'PENDING': document.getElementById('pendingPagination'),
-        'HEAD REVIEW': document.getElementById('headPagination'),
+        'pending': document.getElementById('pendingPagination'),
+        'head review': document.getElementById('headPagination'),
         'submitted': document.getElementById('approvedPagination')
     };
 
     const pagination = {
-        'PENDING': { page: 1, perPage: 10 },
-        'HEAD REVIEW': { page: 1, perPage: 10 },
+        'pending': { page: 1, perPage: 10 },
+        'head review': { page: 1, perPage: 10 },
         'submitted': { page: 1, perPage: 10 },
     };
 
     let allEvaluations = {
-        'PENDING': [],
-        'HEAD REVIEW': [],
+        'pending': [],
+        'head review': [],
         'submitted': []
     };
 
