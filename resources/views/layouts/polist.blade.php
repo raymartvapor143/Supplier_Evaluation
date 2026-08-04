@@ -162,9 +162,13 @@
         </div>
 <script>
 
-function openUploadPOModal(poId)
+function openUploadPOModal(poId, hasPdf = false)
 {
     const modal = document.getElementById('uploadPOModal');
+    const title = modal.querySelector('h2');
+    if (title) {
+        title.innerText = hasPdf ? 'Change Purchase Order PDF' : 'Upload Purchase Order PDF';
+    }
 
     document.getElementById('uploadPOForm').action =
         `/purchase-orders/${poId}/upload-pdf`;
@@ -346,13 +350,11 @@ z-50">
 
 
 
-                                    @if(empty($po->pdf_po))
-                                        <a href="#"
-                                           onclick="openUploadPOModal({{ $po->id }})"
-                                           class="block px-4 py-2 text-sm hover:bg-gray-100">
-                                            Upload PDF
-                                        </a>
-                                    @endif
+                                    <a href="#"
+                                       onclick="openUploadPOModal({{ $po->id }}, {{ $po->pdf_po ? 'true' : 'false' }})"
+                                       class="block px-4 py-2 text-sm hover:bg-gray-100">
+                                        {{ $po->pdf_po ? 'Change PDF' : 'Upload PDF' }}
+                                    </a>
 
                                     <form action="{{ route('po.delete', $po->id) }}" method="POST"
                                           onsubmit="confirmDeletePO(event, this)">

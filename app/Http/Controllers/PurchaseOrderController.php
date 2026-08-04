@@ -291,9 +291,7 @@ public function update(Request $request, $id)
             $scanner = new \App\Services\FileSecurityScanner();
             $scanResult = $scanner->scanUploadedFile($file);
             if (!$scanResult['safe']) {
-                return response()->json([
-                    'message' => 'Security Threat Blocked: ' . $scanResult['reason']
-                ], 422);
+                return back()->with('po_error_update', 'Security Threat Blocked: ' . $scanResult['reason']);
             }
 
             // Delete previous PDF if it still exists
@@ -391,9 +389,7 @@ public function uploadPdf(Request $request, $id)
             $scanner = new \App\Services\FileSecurityScanner();
             $scanResult = $scanner->scanUploadedFile($file);
             if (!$scanResult['safe']) {
-                return response()->json([
-                    'message' => 'Security Threat Blocked: ' . $scanResult['reason']
-                ], 422);
+                return back()->with('error_pdf', 'Security Threat Blocked: ' . $scanResult['reason']);
             }
 
             // delete old file safely
