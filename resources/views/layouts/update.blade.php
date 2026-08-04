@@ -1081,6 +1081,16 @@ if (currentUserRole === 'presentative_staff') {
             }
         });
 
+        // Populate Prepared By (End-User) full name & designation
+        const fullNameInput = document.getElementById('update_full_name');
+        const designationInput = document.getElementById('update_designation');
+        if (fullNameInput) {
+            fullNameInput.value = evaluator?.full_name || evaluation?.prepared_by || window.authUser?.name || '';
+        }
+        if (designationInput) {
+            designationInput.value = evaluator?.designation || window.authUser?.designation || '';
+        }
+
         // =====================================
         // ROLE ACCESS
         // =====================================
