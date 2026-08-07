@@ -74,7 +74,7 @@
 
         <!-- Bulk Evaluate -->
         <a href="{{ route('bulk.page') }}"
-           class="flex items-center space-x-3 px-4 py-2 text-gray-600 rounded-lg
+           class="hidden flex items-center space-x-3 px-4 py-2 text-gray-600 rounded-lg
                   hover:bg-orange-100 hover:text-primary transition">
 
             <i class="ri-stack-line"></i>
