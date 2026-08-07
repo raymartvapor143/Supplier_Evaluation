@@ -36,6 +36,7 @@
             <thead class="bg-slate-50 sticky top-0 z-10 border-b border-gray-200">
                 <tr>
                     <th class="table-head">Purchase Order</th>
+                    <th class="table-head text-center">PO PDF</th>
                     <th class="table-head">Company Name</th>
                     <th class="table-head">Evaluator / Office</th>
                     <th class="table-head text-center">Average Score</th>

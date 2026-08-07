@@ -1308,9 +1308,15 @@ public function evaluationsList(Request $request)
         $preparedBy = $evaluation->digitalApprovals
             ->firstWhere('role', 'Prepared By');
 
+        $poPdfUrl = null;
+        if ($evaluation->purchaseOrder && $evaluation->purchaseOrder->pdf_po) {
+            $poPdfUrl = route('po.view.pdf', $evaluation->purchaseOrder->id);
+        }
+
         return [
             'id' => $evaluation->id,
             'po_no' => $evaluation->po_no,
+            'po_pdf_url' => $poPdfUrl,
             'supplier_name' => $evaluation->supplier_name,
 
             'office_name' => optional($evaluation->office)->name,

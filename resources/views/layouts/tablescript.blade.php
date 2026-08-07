@@ -111,7 +111,7 @@ function renderTable(status) {
     if (filtered.length === 0) {
         tableBody.innerHTML = `
             <tr id="empty-${status}">
-                <td colspan="7" class="px-4 py-10 text-center text-gray-400">
+                <td colspan="8" class="px-4 py-10 text-center text-gray-400">
                     <div class="flex flex-col items-center justify-center space-y-2">
                         <i class="ri-inbox-line text-3xl text-gray-300"></i>
                         <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">No evaluations found</span>
@@ -268,6 +268,13 @@ else {
             tableBody.insertAdjacentHTML('beforeend', `
 <tr id="${rowId}" class="hover:bg-blue-50/50 transition-colors duration-150 border-b border-gray-100">
     <td class="px-4 py-3 text-xs font-bold text-gray-800">${item.po_no ?? '-'}</td>
+    <td class="px-4 py-3 text-center">
+        ${item.po_pdf_url ? `
+            <a href="${item.po_pdf_url}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition shadow-sm" title="View PO PDF">
+                <i class="ri-file-pdf-2-line text-sm"></i> PDF
+            </a>
+        ` : '<span class="text-gray-400 text-xs font-medium">N/A</span>'}
+    </td>
     <td class="px-4 py-3 text-xs font-semibold text-gray-900">${item.supplier_name ?? '-'}</td>
     <td class="px-4 py-3 text-xs text-gray-700">
         <div class="font-medium text-gray-800">${item.office_name ?? '-'}</div>
@@ -302,23 +309,30 @@ else {
             // 0 - PO No
             cells[0].textContent = item.po_no ?? '-';
 
-            // 1 - Supplier
-            cells[1].textContent = item.supplier_name ?? '-';
+            // 1 - PO PDF
+            cells[1].innerHTML = item.po_pdf_url ? `
+                <a href="${item.po_pdf_url}" target="_blank" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition shadow-sm" title="View PO PDF">
+                    <i class="ri-file-pdf-2-line text-sm"></i> PDF
+                </a>
+            ` : '<span class="text-gray-400 text-xs font-medium">N/A</span>';
 
-            // 2 - Office + End User
-            cells[2].innerHTML = `
+            // 2 - Supplier
+            cells[2].textContent = item.supplier_name ?? '-';
+
+            // 3 - Office + End User
+            cells[3].innerHTML = `
                 <div class="font-medium text-gray-800">${item.office_name ?? '-'}</div>
                 ${item.end_user ? `<div class="text-[10px] text-gray-500 uppercase font-semibold">(${item.end_user})</div>` : ''}
             `;
 
-            // 3 - Score
-            cells[3].innerHTML = scoreBadge;
+            // 4 - Score
+            cells[4].innerHTML = scoreBadge;
 
-            // 4 - CY PERIOD (FIXED)
-            cells[4].textContent = item.period_year ? `CY ${item.period_year}` : '-';
+            // 5 - CY PERIOD (FIXED)
+            cells[5].textContent = item.period_year ? `CY ${item.period_year}` : '-';
 
-            // 5 - Date
-            cells[5].textContent = item.date_evaluation ?? '-';
+            // 6 - Date
+            cells[6].textContent = item.date_evaluation ?? '-';
 
             // ✅ ONLY update action column IF STATUS CHANGED
             const select = row.querySelector('select');
