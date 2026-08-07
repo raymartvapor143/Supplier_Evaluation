@@ -134,12 +134,6 @@ public function showBulkEvaluationData(Evaluation $evaluation)
 
 public function fetchEvaluations(Request $request)
 {
-        dd([
-        'user' => auth()->user()?->name,
-        'role' => auth()->user()?->role,
-        'office' => auth()->user()?->office_id,
-    ]);
-
     $request->validate([
         'supplier_name' => 'required|string',
     ]);
@@ -244,7 +238,7 @@ public function getPOList(Request $request)
     /** @var User $user */
     if (!$user->isAdmin()) {
 
-        $office = $user->office->abbreviation;
+        $office = $user->office?->abbreviation ?? '';
 
         if ($office === 'PMO') {
             $query->where(function ($q) {
@@ -289,7 +283,7 @@ public function getSuppliersByEndUser(Request $request)
         ->where('supplier', '!=', '');
     /** @var User $user */
     if (!$user->isAdmin()) {
-        $office = $user->office->abbreviation;
+        $office = $user->office?->abbreviation ?? '';
 
         if ($office === 'PMO') {
             $query->where(function ($q) {
@@ -470,10 +464,9 @@ public function bulkStore(Request $request)
 
                 if ($existing) {
 
-                    // ONLY update if null (preserve existing score)
                     $existing->update([
-                        'number_rating' => $existing->number_rating ?? $c['rating'],
-                        'remarks'       => $existing->remarks ?? ($c['remarks'] ?? null),
+                        'number_rating' => $c['rating'] ?? $existing->number_rating,
+                        'remarks'       => $c['remarks'] ?? $existing->remarks,
                     ]);
 
                 } else {

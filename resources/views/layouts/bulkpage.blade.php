@@ -1604,6 +1604,17 @@ document.addEventListener('click', function (e) {
     ========================== */
     document.getElementById('sidebar')?.classList.add('hidden');
     populateSuppliers();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const supplierParam = urlParams.get('supplier');
+    if (supplierParam) {
+        const select = document.getElementById('supplierSelect');
+        if (select) {
+            select.value = supplierParam;
+            select.dispatchEvent(new Event('change'));
+        }
+    }
+
     document.getElementById('supplierModal')?.classList.remove('hidden');
 
 
@@ -1972,14 +1983,14 @@ document.getElementById('supplierSelect')
 .addEventListener('change', function () {
 
     const supplier = this.value;
+    const tbody = document.getElementById('evaluationTable');
+    const selectAllCb = document.getElementById('selectAllEval');
 
-    const tbody =
-        document.getElementById('evaluationTable');
+    if (selectAllCb) selectAllCb.checked = false;
 
     tbody.innerHTML = '';
 
     if (!supplier) {
-
         tbody.innerHTML = `
             <tr>
                 <td colspan="4"
@@ -1988,15 +1999,14 @@ document.getElementById('supplierSelect')
                 </td>
             </tr>
         `;
-
         return;
     }
 
+    let matchCount = 0;
     document.querySelectorAll('.evaluation-item')
         .forEach(item => {
-
             if (item.dataset.supplier === supplier) {
-
+                matchCount++;
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-gray-50">
 
@@ -2007,16 +2017,16 @@ document.getElementById('supplierSelect')
                                 value="${item.dataset.id}">
                         </td>
 
-                        <td class="p-3">
-                            ${item.dataset.po || ''}
+                        <td class="p-3 font-medium text-gray-800">
+                            ${item.dataset.po || '-'}
                         </td>
 
                         <td class="p-3">
-                            ${item.dataset.date || ''}
+                            ${item.dataset.date || '-'}
                         </td>
 
                         <td class="p-3">
-                            ${item.dataset.coveredperiod || ''}
+                            ${item.dataset.coveredperiod || '-'}
                         </td>
 
                     </tr>
@@ -2024,6 +2034,18 @@ document.getElementById('supplierSelect')
             }
         });
 
+    if (matchCount === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4"
+                    class="p-4 text-center text-gray-500">
+                    No evaluations found for this supplier
+                </td>
+            </tr>
+        `;
+    } else {
+        syncModalSelections();
+    }
 });
 
 function removeSelectedEvaluations() {
@@ -2129,11 +2151,20 @@ function proceedBulk() {
 
     updateSidebarList();
 
-    if (addedCount === 0) {
+    if (addedCount === 0 && selectedEvaluations.size === 0) {
         alert('All selected evaluations are already added.');
     }
 
     closeModal();
+
+    // Auto-select and load the first evaluation into the main evaluation form
+    if (selectedEvaluations.size > 0) {
+        const firstId = Array.from(selectedEvaluations.keys())[0];
+        const firstItem = document.querySelector(`.evaluation-item[data-id="${firstId}"]`);
+        if (firstItem) {
+            firstItem.click();
+        }
+    }
 }
 
 
@@ -2146,6 +2177,15 @@ document.addEventListener('change', function (e) {
         document.querySelectorAll('.eval-checkbox').forEach(cb => {
             cb.checked = checked;
         });
+    } else if (e.target.classList.contains('eval-checkbox')) {
+
+        const all = document.querySelectorAll('.eval-checkbox');
+        const checked = document.querySelectorAll('.eval-checkbox:checked');
+        const selectAllCb = document.getElementById('selectAllEval');
+
+        if (selectAllCb) {
+            selectAllCb.checked = (all.length > 0 && all.length === checked.length);
+        }
     }
 });
 
