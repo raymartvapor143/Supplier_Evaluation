@@ -8,6 +8,8 @@
   <title>Bulk Evaluation System</title>
   <script src="https://cdn.tailwindcss.com/3.4.16"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+
+  <script src="{{asset('script/block.js')}}"></script>
   <style>
     :where([class^="ri-"])::before {
       content: "\f3c2"
