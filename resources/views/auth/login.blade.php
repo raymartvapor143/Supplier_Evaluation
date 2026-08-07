@@ -8,14 +8,14 @@
 
   <title>Login</title>
 
-  <!-- Tailwind CDN -->
+
   <script src="{{asset('script/tailwind.js')}}"></script>
-  <!-- SweetAlert2 -->
+ 
 <script src="{{asset('script/sweetalert.js')}}"></script>
-<!-- Axios for AJAX -->
+
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
-  <!-- Smooth Animation -->
+
   <style>
     @keyframes fadeSlide {
       from {
@@ -34,7 +34,7 @@
   </style>
 </head>
 
-{{-- <script src="{{asset('script/block.js')}}"></script> --}}
+<script src="{{asset('script/block.js')}}"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -68,22 +68,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <body class="bg-gray-100">
 
-  <!-- MAIN CONTAINER -->
+ 
   <div class="flex min-h-screen">
 
-    <!-- LEFT SIDE (FULL BACKGROUND IMAGE) -->
+    
     <div class="hidden lg:block w-1/2 relative h-screen">
 
-      <!-- Background Image -->
+     
       <div
         class="absolute inset-0 bg-cover bg-center"
         style="background-image: url('{{ asset('login-logo.png') }}');"
       ></div>
 
-      <!-- Dark Overlay -->
+  
       <div class="absolute inset-0"></div>
 
-      <!-- Content -->
+   
       {{-- <div class="relative z-10 flex h-full flex-col justify-center px-16 text-white">
         <h1 class="text-4xl font-bold mb-4 animate-fade-slide">
           Welcome Back
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function () {
       </div> --}}
     </div>
 
-    <!-- RIGHT SIDE (LOGIN FORM) -->
+
     <div class="w-full lg:w-1/2 flex items-center justify-center px-6">
 
       <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 animate-fade-slide">
@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         <form class="space-y-5">
 
-          <!-- Email -->
+          
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
               Email Address
@@ -124,8 +124,8 @@ document.addEventListener('DOMContentLoaded', function () {
             />
           </div>
 
-          <!-- Password -->
-<!-- Password -->
+          
+
 <div class="relative">
     <label class="block text-sm font-medium text-gray-700 mb-1">
         Password
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function () {
         onclick="togglePassword('loginPassword', this)"
         class="absolute right-3 top-[42px] text-gray-500 hover:text-gray-700 transition">
 
-        <!-- Default Eye Icon -->
+       
         <svg xmlns="http://www.w3.org/2000/svg"
              class="h-5 w-5"
              fill="none"
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function () {
     </button>
 </div>
 
-          <!-- Remember & Forgot -->
+      
           <div class="flex items-center justify-between text-sm">
             <label class="flex items-center gap-2">
               <input type="checkbox" hidden class="rounded text-blue-600">
@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </a>
           </div>
 
-          <!-- Button -->
+      
         <button
             id="loginBtn"
             type="submit"
@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         </form>
 
-                          <!-- Register Link -->
+                   
         <p class="text-center text-sm text-gray-600 mt-4">
           Don't have an account?
             <button onclick="showPrivacyNotice()" class="text-blue-600 hover:underline font-medium">
@@ -200,8 +200,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </button>
         </p>
 
-        <!-- Footer -->
-<!-- Footer -->
+ 
 <div class="mt-6 pt-4 border-t border-gray-200 text-center">
     <p class="text-xs text-gray-500 leading-relaxed">
         By using the Supplier's Evaluation System, you agree to our
@@ -217,7 +216,7 @@ document.addEventListener('DOMContentLoaded', function () {
     </p>
 
     <p class="text-xs text-gray-400 mt-2">
-        © 2026 Supplier's Evaluation System. All rights reserved.
+        © 2026 OPPMO - Supplier's Evaluation System. All rights reserved.
     </p>
 </div>
 
@@ -388,24 +387,24 @@ if (error.response) {
 
 
 
-<!-- REGISTER MODAL -->
+
 <div id="registerModal"
     class="fixed inset-0 hidden items-center justify-center z-50 bg-black/60 backdrop-blur-md overflow-y-auto p-4 sm:p-6 transition-all duration-300">
 
-    <!-- MODAL -->
+   
     <div id="modalContent"
         class="relative w-full max-w-5xl bg-white rounded-[28px] shadow-[0_20px_80px_rgba(0,0,0,0.25)] border border-gray-200 overflow-hidden transform scale-95 opacity-0 transition-all duration-300 ease-out max-h-[95vh] overflow-y-auto">
 
-        <!-- HEADER -->
+    
         <div
             class="relative bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 px-6 sm:px-10 py-8 text-white overflow-hidden">
 
-            <!-- Decorative Blur -->
+       
             <div
                 class="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl -translate-y-24 translate-x-24">
             </div>
 
-<!-- CLOSE BUTTON -->
+
 <button onclick="closeModal()"
     class="absolute top-5 right-5 group
            w-12 h-12
@@ -420,14 +419,14 @@ if (error.response) {
            flex items-center justify-center
            transition-all duration-300 ease-out">
 
-    <!-- Glow Effect -->
+   
     <div class="absolute inset-0 rounded-full
                 bg-red-400/0
                 group-hover:bg-red-400/20
                 blur-xl transition-all duration-300">
     </div>
 
-    <!-- Icon -->
+ 
     <svg xmlns="http://www.w3.org/2000/svg"
         class="w-5 h-5 text-white
                group-hover:rotate-90
