@@ -27,7 +27,9 @@ class UserController extends Controller
             ->where('status', 'inactive') // pending requests
             ->get();
 
-        $pos = PurchaseOrder::latest()->get();
+        $pos = PurchaseOrder::orderByRaw('CASE WHEN pdf_po IS NULL OR pdf_po = "" THEN 0 ELSE 1 END')
+            ->latest()
+            ->get();
 
         return view('users.index', compact('activeUsers', 'requestUsers', 'pos'));
     }

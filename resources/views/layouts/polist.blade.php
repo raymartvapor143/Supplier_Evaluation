@@ -911,9 +911,9 @@ function sortPOByPDF_v2() {
         let aHasPDF = a.classList.contains('has-pdf');
         let bHasPDF = b.classList.contains('has-pdf');
 
-        // PDF rows first
-        if (aHasPDF && !bHasPDF) return -1;
-        if (!aHasPDF && bHasPDF) return 1;
+        // Not yet uploaded PDF rows first
+        if (!aHasPDF && bHasPDF) return -1;
+        if (aHasPDF && !bHasPDF) return 1;
 
         return 0;
     });

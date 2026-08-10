@@ -121,7 +121,9 @@ public function dashboard(Request $request)
 {
     $users = User::whereIn('role', ['administrator', 'pgso'])->get();
 
-    $pos = PurchaseOrder::latest()->get();
+    $pos = PurchaseOrder::orderByRaw('CASE WHEN pdf_po IS NULL OR pdf_po = "" THEN 0 ELSE 1 END')
+        ->latest()
+        ->get();
 
 
     $endUsers = PurchaseOrder::select('end_user')
