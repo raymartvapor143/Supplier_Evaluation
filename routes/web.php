@@ -182,6 +182,12 @@ Route::get('/analytics/department/{department}/semester-evaluations', [AdminCont
 Route::get('/analytics/semester-evaluations/download', [AdminController::class, 'downloadSemesterSummary'])
     ->name('admin.evaluations.semester.download');
 
+// Missing PDF POs report
+Route::get('/analytics/missing-pdf-pos', [AdminController::class, 'getMissingPdfPOs']);
+Route::get('/analytics/missing-pdf-pos/download', [AdminController::class, 'downloadMissingPdfPOsReport'])
+    ->name('admin.reports.missing_pdf_pos.download');
+
+
 
 Route::post('/purchase-orders/import', [PurchaseOrderController::class, 'import'])->name('po.import');
 Route::post('/purchase-orders/store', [PurchaseOrderController::class, 'store'])

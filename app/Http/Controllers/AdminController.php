@@ -576,6 +576,83 @@ public function downloadSemesterSummary(Request $request)
     return $pdf->download('supplier-semester-evaluations-summary.pdf');
 }
 
+public function getMissingPdfPOs(Request $request)
+{
+    $query = PurchaseOrder::where(function ($q) {
+        $q->whereNull('pdf_po')->orWhere('pdf_po', '');
+    });
+
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function ($q) use ($search) {
+            $q->where('po_no', 'like', "%{$search}%")
+              ->orWhere('pr_no', 'like', "%{$search}%")
+              ->orWhere('item', 'like', "%{$search}%")
+              ->orWhere('end_user', 'like', "%{$search}%")
+              ->orWhere('supplier', 'like', "%{$search}%");
+        });
+    }
+
+    if ($request->filled('department') && $request->department !== 'all') {
+        $query->where('end_user', $request->department);
+    }
+
+    if ($request->filled('supplier') && $request->supplier !== 'all') {
+        $query->where('supplier', $request->supplier);
+    }
+
+    $pos = $query->latest()->get();
+
+    return response()->json([
+        'status' => 'success',
+        'data'   => $pos,
+        'count'  => $pos->count(),
+    ]);
+}
+
+public function downloadMissingPdfPOsReport(Request $request)
+{
+    @ini_set('memory_limit', '1024M');
+    @set_time_limit(300);
+
+    $department = $request->query('department', 'all');
+    $supplier   = $request->query('supplier', 'all');
+    $search     = $request->query('search', '');
+
+    $query = PurchaseOrder::where(function ($q) {
+        $q->whereNull('pdf_po')->orWhere('pdf_po', '');
+    });
+
+    if (!empty($search)) {
+        $query->where(function ($q) use ($search) {
+            $q->where('po_no', 'like', "%{$search}%")
+              ->orWhere('pr_no', 'like', "%{$search}%")
+              ->orWhere('item', 'like', "%{$search}%")
+              ->orWhere('end_user', 'like', "%{$search}%")
+              ->orWhere('supplier', 'like', "%{$search}%");
+        });
+    }
+
+    if (!empty($department) && $department !== 'all') {
+        $query->where('end_user', $department);
+    }
+
+    if (!empty($supplier) && $supplier !== 'all') {
+        $query->where('supplier', $supplier);
+    }
+
+    $pos = $query->latest()->get();
+
+    $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+        'pdf.missing_pdf_pos',
+        compact('pos', 'department', 'supplier')
+    )->setPaper('a4', 'landscape');
+
+    return $pdf->download('purchase-orders-pending-pdf-report.pdf');
+}
+
+
+
     /**
      * Threat & Security Scanner View
      */

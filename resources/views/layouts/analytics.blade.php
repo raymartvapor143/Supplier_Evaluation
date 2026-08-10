@@ -245,7 +245,100 @@
 
   </div>
 
+  <!-- Purchase Orders Pending PDF Upload Section -->
+  <div class="bg-white p-4 rounded-lg shadow w-full">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900">
+          Purchase Orders Pending PDF Upload
+        </h2>
+        <p class="text-xs text-gray-500">List of Purchase Orders without uploaded PDF documents</p>
+      </div>
+
+      <!-- Download Report Button -->
+      <div class="flex flex-wrap gap-2 w-full sm:w-auto items-center">
+        <button type="button" onclick="downloadMissingPoPdfReport()" class="flex items-center bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-sm transition-colors cursor-pointer">
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          Download PDF Report
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-col sm:flex-row gap-4 items-center justify-between mb-4">
+      <!-- Search -->
+      <div class="relative flex-1 w-full">
+        <input id="missing-po-search" type="text" placeholder="Search PO, PR, Item, End User, Supplier..."
+               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs">
+        <div class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+          <i class="ri-search-line"></i>
+        </div>
+      </div>
+
+      <!-- Department Filter -->
+      <div class="relative w-full sm:w-48">
+        <select id="missing-po-department"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs">
+          <option value="all">All Departments</option>
+        </select>
+        <label class="absolute -top-2 left-2 bg-white px-1 text-[10px] text-gray-600">
+          Department
+        </label>
+      </div>
+
+      <!-- Supplier Filter -->
+      <div class="relative w-full sm:w-48">
+        <select id="missing-po-supplier"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-xs">
+          <option value="all">All Suppliers</option>
+        </select>
+        <label class="absolute -top-2 left-2 bg-white px-1 text-[10px] text-gray-600">
+          Supplier
+        </label>
+      </div>
+
+      <!-- Clear Filter Button -->
+      <div>
+        <button id="missing-po-clear-filters"
+                class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg shadow-sm text-xs font-medium transition-all duration-200">
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="overflow-x-auto border border-gray-200 rounded-lg">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">#</th>
+            <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">PO Number</th>
+            <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">PR Number</th>
+            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Item / Particulars</th>
+            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">End User</th>
+            <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Supplier</th>
+            <th class="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">PDF Status</th>
+          </tr>
+        </thead>
+        <tbody id="missingPoTableBody" class="bg-white divide-y divide-gray-200">
+          <tr>
+            <td colspan="7" class="text-center py-4 text-gray-500 text-xs">Loading pending PO list...</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination Container -->
+      <div id="missingPoPagination" class="flex justify-center items-center py-2.5 bg-gray-50 border-t border-gray-200 space-x-1.5"></div>
+    </div>
+
+  </div>
+
 </div>
+
 
 
 
@@ -704,6 +797,7 @@ toggleAnalytics.addEventListener('click', () => {
     initBarChart();   // previously renderCharts()
     initLineChart();  // line chart
     initSemesterChart(); // semester chart & breakdown table
+    initMissingPoReport(); // missing PO PDF report & breakdown table
   }, 300);
 });
 
@@ -711,7 +805,217 @@ toggleBack.addEventListener('click', () => {
   flipInner.style.transform = 'rotateY(0deg)';
   setTimeout(() => backSide.classList.add('hidden'), 700);
 });
+
+/* ================= MISSING PO PDF REPORT JS ================= */
+let missingPoData = [];
+let missingPoCurrentPage = 1;
+const missingPoRowsPerPage = 10;
+
+async function initMissingPoReport() {
+    try {
+        const res = await safeFetch('/analytics/missing-pdf-pos');
+        const json = await res.json();
+        if (json.status === 'success') {
+            missingPoData = json.data || [];
+            populateMissingPoFilters();
+            renderMissingPoTable();
+            setupMissingPoListeners();
+        }
+    } catch (err) {
+        console.error('Failed to load missing PO PDF data:', err);
+    }
+}
+
+function populateMissingPoFilters() {
+    const deptSelect = document.getElementById('missing-po-department');
+    const supplierSelect = document.getElementById('missing-po-supplier');
+
+    if (!deptSelect || !supplierSelect) return;
+
+    const departments = [...new Set(missingPoData.map(item => item.end_user).filter(Boolean))].sort();
+    const suppliers = [...new Set(missingPoData.map(item => item.supplier).filter(Boolean))].sort();
+
+    const currDept = deptSelect.value;
+    const currSup = supplierSelect.value;
+
+    deptSelect.innerHTML = '<option value="all">All Departments</option>';
+    supplierSelect.innerHTML = '<option value="all">All Suppliers</option>';
+
+    departments.forEach(dept => {
+        const opt = document.createElement('option');
+        opt.value = dept;
+        opt.textContent = dept;
+        deptSelect.appendChild(opt);
+    });
+
+    suppliers.forEach(sup => {
+        const opt = document.createElement('option');
+        opt.value = sup;
+        opt.textContent = sup;
+        supplierSelect.appendChild(opt);
+    });
+
+    if (currDept) deptSelect.value = currDept;
+    if (currSup) supplierSelect.value = currSup;
+}
+
+function setupMissingPoListeners() {
+    const searchInput = document.getElementById('missing-po-search');
+    const deptSelect = document.getElementById('missing-po-department');
+    const supplierSelect = document.getElementById('missing-po-supplier');
+    const clearBtn = document.getElementById('missing-po-clear-filters');
+
+    if (searchInput && !searchInput.dataset.hasListener) {
+        searchInput.dataset.hasListener = "true";
+        searchInput.addEventListener('input', () => {
+            missingPoCurrentPage = 1;
+            renderMissingPoTable();
+        });
+    }
+
+    if (deptSelect && !deptSelect.dataset.hasListener) {
+        deptSelect.dataset.hasListener = "true";
+        deptSelect.addEventListener('change', () => {
+            missingPoCurrentPage = 1;
+            renderMissingPoTable();
+        });
+    }
+
+    if (supplierSelect && !supplierSelect.dataset.hasListener) {
+        supplierSelect.dataset.hasListener = "true";
+        supplierSelect.addEventListener('change', () => {
+            missingPoCurrentPage = 1;
+            renderMissingPoTable();
+        });
+    }
+
+    if (clearBtn && !clearBtn.dataset.hasListener) {
+        clearBtn.dataset.hasListener = "true";
+        clearBtn.addEventListener('click', () => {
+            if (searchInput) searchInput.value = '';
+            if (deptSelect) deptSelect.value = 'all';
+            if (supplierSelect) supplierSelect.value = 'all';
+            missingPoCurrentPage = 1;
+            renderMissingPoTable();
+        });
+    }
+}
+
+function getFilteredMissingPoData() {
+    const searchVal = (document.getElementById('missing-po-search')?.value || '').toLowerCase().trim();
+    const deptVal = document.getElementById('missing-po-department')?.value || 'all';
+    const supplierVal = document.getElementById('missing-po-supplier')?.value || 'all';
+
+    return missingPoData.filter(item => {
+        const matchesSearch = !searchVal ||
+            (item.po_no || '').toLowerCase().includes(searchVal) ||
+            (item.pr_no || '').toLowerCase().includes(searchVal) ||
+            (item.item || '').toLowerCase().includes(searchVal) ||
+            (item.end_user || '').toLowerCase().includes(searchVal) ||
+            (item.supplier || '').toLowerCase().includes(searchVal);
+
+        const matchesDept = (deptVal === 'all') || item.end_user === deptVal;
+        const matchesSupplier = (supplierVal === 'all') || item.supplier === supplierVal;
+
+        return matchesSearch && matchesDept && matchesSupplier;
+    });
+}
+
+function renderMissingPoTable() {
+    const tableBody = document.getElementById('missingPoTableBody');
+    if (!tableBody) return;
+
+    const filtered = getFilteredMissingPoData();
+    const totalPages = Math.ceil(filtered.length / missingPoRowsPerPage) || 1;
+
+    if (missingPoCurrentPage > totalPages) missingPoCurrentPage = totalPages;
+
+    const startIndex = (missingPoCurrentPage - 1) * missingPoRowsPerPage;
+    const pageData = filtered.slice(startIndex, startIndex + missingPoRowsPerPage);
+
+    if (pageData.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-gray-500 text-xs">No pending POs found matching criteria</td></tr>`;
+        renderMissingPoPagination(0);
+        return;
+    }
+
+    let rows = '';
+    pageData.forEach((po, idx) => {
+        const index = startIndex + idx + 1;
+        rows += `
+            <tr class="hover:bg-gray-50/80 transition-colors">
+                <td class="px-4 py-2.5 text-center text-xs font-medium text-gray-500">${index}</td>
+                <td class="px-4 py-2.5 text-center text-xs font-bold text-gray-800">${po.po_no || '-'}</td>
+                <td class="px-4 py-2.5 text-center text-xs text-gray-600">${po.pr_no || '-'}</td>
+                <td class="px-4 py-2.5 text-left text-xs text-gray-700">${po.item || '-'}</td>
+                <td class="px-4 py-2.5 text-left text-xs text-gray-700">${po.end_user || '-'}</td>
+                <td class="px-4 py-2.5 text-left text-xs text-gray-700">${po.supplier || '-'}</td>
+                <td class="px-4 py-2.5 text-center text-xs">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-red-100 text-red-700 border border-red-200">
+                        <i class="ri-alert-line mr-1"></i> No PDF
+                    </span>
+                </td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = rows;
+    renderMissingPoPagination(filtered.length);
+}
+
+function renderMissingPoPagination(totalItems) {
+    const paginationContainer = document.getElementById('missingPoPagination');
+    if (!paginationContainer) return;
+
+    paginationContainer.innerHTML = '';
+    const totalPages = Math.ceil(totalItems / missingPoRowsPerPage);
+    if (totalPages <= 1) return;
+
+    const prevBtn = document.createElement('button');
+    prevBtn.className = `px-2.5 py-1 text-xs font-medium rounded border ${missingPoCurrentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`;
+    prevBtn.innerHTML = '<i class="ri-arrow-left-s-line"></i> Prev';
+    prevBtn.disabled = missingPoCurrentPage === 1;
+    prevBtn.onclick = () => {
+        if (missingPoCurrentPage > 1) {
+            missingPoCurrentPage--;
+            renderMissingPoTable();
+        }
+    };
+    paginationContainer.appendChild(prevBtn);
+
+    const info = document.createElement('span');
+    info.className = 'text-xs text-gray-600 px-2';
+    info.textContent = `Page ${missingPoCurrentPage} of ${totalPages}`;
+    paginationContainer.appendChild(info);
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className = `px-2.5 py-1 text-xs font-medium rounded border ${missingPoCurrentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'}`;
+    nextBtn.innerHTML = 'Next <i class="ri-arrow-right-s-line"></i>';
+    nextBtn.disabled = missingPoCurrentPage === totalPages;
+    nextBtn.onclick = () => {
+        if (missingPoCurrentPage < totalPages) {
+            missingPoCurrentPage++;
+            renderMissingPoTable();
+        }
+    };
+    paginationContainer.appendChild(nextBtn);
+}
+
+function downloadMissingPoPdfReport() {
+    const dept = document.getElementById('missing-po-department')?.value || 'all';
+    const supplier = document.getElementById('missing-po-supplier')?.value || 'all';
+    const search = document.getElementById('missing-po-search')?.value || '';
+
+    const params = new URLSearchParams({
+        department: dept,
+        supplier: supplier,
+        search: search
+    });
+
+    window.open(`/analytics/missing-pdf-pos/download?${params.toString()}`, '_blank');
+}
 </script>
+
 
           <style>
             /* Ensure back matches front size */
