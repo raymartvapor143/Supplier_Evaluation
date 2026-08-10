@@ -28,6 +28,11 @@ Route::get(
     [ForgotPasswordController::class, 'getPuzzle']
 );
 
+Route::get(
+    '/register/puzzle',
+    [AuthController::class, 'getRegisterPuzzle']
+);
+
 Route::post(
     '/forgot-password',
     [ForgotPasswordController::class,'send']

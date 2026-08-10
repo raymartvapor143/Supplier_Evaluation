@@ -28,9 +28,80 @@ class AuthController extends Controller
     return view('auth.login', compact('offices'));
    }
 
+    /**
+     * Generate registration security puzzle CAPTCHA
+     */
+    public function getRegisterPuzzle()
+    {
+        $token = Str::random(32);
+        $targetX = rand(60, 210);
+        $targetY = rand(20, 75);
+        $seed = rand(1000, 9999);
+
+        session(['register_puzzle_' . $token => [
+            'x' => $targetX,
+            'y' => $targetY
+        ]]);
+
+        return response()->json([
+            'token' => $token,
+            'target_x' => $targetX,
+            'target_y' => $targetY,
+            'seed' => $seed
+        ]);
+    }
 
 public function register(Request $request)
 {
+    // ==========================================
+    // 1. HONEYPOT BOT PROTECTION
+    // ==========================================
+    if (!empty($request->input('b_website'))) {
+        return response()->json([
+            'message' => 'Automated submission detected.'
+        ], 422);
+    }
+
+    // ==========================================
+    // 2. IP RATE LIMITING (PREVENT SPAM SUBMISSION)
+    // ==========================================
+    $rateLimitKey = 'register_ip:' . $request->ip();
+    if (RateLimiter::tooManyAttempts($rateLimitKey, 5)) {
+        $seconds = RateLimiter::availableIn($rateLimitKey);
+        return response()->json([
+            'message' => "Too many registration attempts. Please try again in {$seconds} seconds."
+        ], 429);
+    }
+
+    // ==========================================
+    // 3. CAPTCHA PUZZLE VERIFICATION
+    // ==========================================
+    $captchaToken = $request->input('captcha_token');
+    $captchaX = $request->input('captcha_x');
+
+    if (!$captchaToken || $captchaX === null) {
+        return response()->json([
+            'message' => 'Please solve the security puzzle CAPTCHA before submitting.'
+        ], 422);
+    }
+
+    $puzzleSession = session('register_puzzle_' . $captchaToken);
+
+    if (!$puzzleSession || !isset($puzzleSession['x'])) {
+        return response()->json([
+            'message' => 'Security CAPTCHA expired or invalid. Please refresh the puzzle.'
+        ], 422);
+    }
+
+    if (abs((int)$puzzleSession['x'] - (int)$captchaX) > 8) {
+        return response()->json([
+            'message' => 'CAPTCHA puzzle piece position is incorrect. Please align the puzzle correctly.'
+        ], 422);
+    }
+
+    // Hit rate limiter & clear puzzle session after success
+    RateLimiter::hit($rateLimitKey, 120);
+    session()->forget('register_puzzle_' . $captchaToken);
 
     $validator = Validator::make(
         $request->all(),

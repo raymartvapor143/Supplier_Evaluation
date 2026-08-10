@@ -126,46 +126,47 @@ document.addEventListener('DOMContentLoaded', function () {
 
           
 
-<div class="relative">
-    <label class="block text-sm font-medium text-gray-700 mb-1">
+<div class="space-y-1">
+    <label class="block text-sm font-medium text-gray-700">
         Password
     </label>
 
-    <input
-        id="loginPassword"
-        type="password"
-        placeholder="••••••••"
-        class="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-        required
-    />
+    <div class="relative">
+        <input
+            id="loginPassword"
+            type="password"
+            placeholder="••••••••"
+            class="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+            required
+        />
 
-    <button
-        type="button"
-        onclick="togglePassword('loginPassword', this)"
-        class="absolute right-3 top-[42px] text-gray-500 hover:text-gray-700 transition">
+        <button
+            type="button"
+            onclick="togglePassword('loginPassword', this)"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition p-1.5 rounded-lg hover:bg-slate-100">
 
-       
-        <svg xmlns="http://www.w3.org/2000/svg"
-             class="h-5 w-5"
-             fill="none"
-             viewBox="0 0 24 24"
-             stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg"
+                 class="h-5 w-5"
+                 fill="none"
+                 viewBox="0 0 24 24"
+                 stroke="currentColor">
 
-            <path stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
 
-            <path stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M2.458 12C3.732 7.943 7.523 5 12 5
-                     c4.477 0 8.268 2.943 9.542 7
-                     -1.274 4.057-5.065 7-9.542 7
-                     -4.477 0-8.268-2.943-9.542-7z"/>
-        </svg>
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5
+                         c4.477 0 8.268 2.943 9.542 7
+                         -1.274 4.057-5.065 7-9.542 7
+                         -4.477 0-8.268-2.943-9.542-7z"/>
+            </svg>
 
-    </button>
+        </button>
+    </div>
 </div>
 
       
@@ -405,32 +406,23 @@ if (error.response) {
             </div>
 
 
-<button onclick="closeModal()"
-    class="absolute top-5 right-5 group
-           w-12 h-12
-           rounded-full
-           bg-white/10 backdrop-blur-md
-           border border-white/20
-           hover:bg-red-500/90
-           hover:border-red-400
-           hover:scale-110
+   <button onclick="closeModal()"
+    aria-label="Close Modal"
+    class="absolute top-6 right-6 z-30 group
+           w-11 h-11
+           rounded-2xl
+           bg-white/15 backdrop-blur-md
+           border border-white/30
+           hover:bg-rose-600
+           hover:border-rose-400
+           hover:scale-105
            active:scale-95
-           shadow-lg shadow-black/20
+           shadow-xl shadow-black/20
            flex items-center justify-center
-           transition-all duration-300 ease-out">
+           transition-all duration-200 ease-out">
 
-   
-    <div class="absolute inset-0 rounded-full
-                bg-red-400/0
-                group-hover:bg-red-400/20
-                blur-xl transition-all duration-300">
-    </div>
-
- 
     <svg xmlns="http://www.w3.org/2000/svg"
-        class="w-5 h-5 text-white
-               group-hover:rotate-90
-               transition-transform duration-300 relative z-10"
+        class="w-5 h-5 text-white group-hover:rotate-90 transition-transform duration-300 relative z-10"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -645,6 +637,26 @@ if (error.response) {
 
                 <!-- AJAX FORM -->
                 <form id="registerForm" class="space-y-7">
+                    <!-- HONEYPOT BOT FIELD (HIDDEN) -->
+                    <input type="text" name="b_website" id="b_website" class="hidden" tabindex="-1" autocomplete="off" style="display:none !important;" aria-hidden="true">
+
+                    <!-- STEP HEADER INDICATOR -->
+                    <div class="bg-blue-50/70 border border-blue-100 rounded-2xl p-4 flex items-center justify-between text-xs sm:text-sm font-medium text-blue-900">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">1</span>
+                            <span>Account & Role</span>
+                        </div>
+                        <div class="w-8 h-0.5 bg-blue-200"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">2</span>
+                            <span>Security & Signature</span>
+                        </div>
+                        <div class="w-8 h-0.5 bg-blue-200"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs">3</span>
+                            <span>CAPTCHA</span>
+                        </div>
+                    </div>
 
                     <!-- GRID -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -652,14 +664,15 @@ if (error.response) {
                         <!-- FULL NAME -->
                         <div class="md:col-span-2">
 
-                            <label class="form-label">
-                                Full Name
+                            <label class="form-label flex items-center justify-between">
+                                <span>Full Name <span class="text-red-500">*</span></span>
+                                <span class="text-xs text-slate-400 font-normal">First M. Last</span>
                             </label>
 
                             <input type="text"
                                 name="name"
                                 class="modern-input"
-                                placeholder="Enter full name"
+                                placeholder="e.g. Juan Dela Cruz"
                                 required>
 
                         </div>
@@ -667,14 +680,15 @@ if (error.response) {
                         <!-- DEPARTMENT -->
                         <div class="relative md:col-span-2">
 
-                            <label class="form-label">
-                                Department
+                            <label class="form-label flex items-center justify-between">
+                                <span>Department / Office <span class="text-red-500">*</span></span>
+                                <span class="text-xs text-slate-400 font-normal">Select official office</span>
                             </label>
 
                             <!-- KEEPING ORIGINAL IDS -->
                             <input type="text"
                                 id="officeInput"
-                                placeholder="Search Department..."
+                                placeholder="Type to search department..."
                                 class="modern-input"
                                 autocomplete="off">
 
@@ -691,12 +705,17 @@ if (error.response) {
                                     @if($office->name !== 'PGSO-Warehouse')
 
                                         <!-- KEEPING ORIGINAL CLASS -->
-                                        <div class="office-option px-4 py-3 rounded-xl hover:bg-slate-100 cursor-pointer transition-all duration-150"
+                                        <div class="office-option px-4 py-3 rounded-xl hover:bg-blue-50 cursor-pointer transition-all duration-150 flex items-center justify-between"
                                             data-id="{{ $office->id }}"
                                             data-name="{{ $office->name }}"
                                             data-abbreviation="{{ $office->abbreviation ?? '' }}">
 
-                                            {{ $office->name }} @if(!empty($office->abbreviation)) <span class="text-xs text-gray-500 font-normal">({{ $office->abbreviation }})</span> @endif
+                                            <span class="font-medium text-slate-800">{{ $office->name }}</span>
+                                            @if(!empty($office->abbreviation))
+                                                <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600">
+                                                    {{ $office->abbreviation }}
+                                                </span>
+                                            @endif
 
                                         </div>
 
@@ -710,14 +729,14 @@ if (error.response) {
                         <!-- designation -->
                         <div class="md:col-span-2">
 
-                            <label class="form-label">
-                                Designation
+                            <label class="form-label flex items-center justify-between">
+                                <span>Designation / Position <span class="text-red-500">*</span></span>
                             </label>
 
                             <input type="text"
                                 name="designation"
                                 class="modern-input"
-                                placeholder="Enter Designation"
+                                placeholder="e.g. Administrative Officer IV"
                                 required>
 
                         </div>
@@ -726,7 +745,7 @@ if (error.response) {
                         <div>
 
                             <label class="form-label">
-                                Role Account
+                                Role Account <span class="text-red-500">*</span>
                             </label>
 
                             <select name="role"
@@ -734,7 +753,7 @@ if (error.response) {
                                 required>
 
                                 <option value="" disabled selected>
-                                    Select Role
+                                    Select System Role
                                 </option>
 
                                 <option value="end_user">
@@ -760,8 +779,9 @@ if (error.response) {
 <!-- AUTHORIZATION LETTER -->
 <div id="authorizationLetterContainer" class="md:col-span-2 hidden">
 
-    <label class="form-label">
-        Authorization Letter
+    <label class="form-label flex items-center justify-between">
+        <span>Authorization Letter <span class="text-red-500">*</span></span>
+        <span class="text-xs text-slate-400 font-normal">PDF format (Max 5MB)</span>
     </label>
 
     <input type="file"
@@ -770,8 +790,9 @@ if (error.response) {
         accept=".pdf"
         class="modern-input">
 
-    <p class="text-sm text-slate-500 mt-2">
-        Upload a signed authorization letter from your department.
+    <p class="text-xs text-slate-500 mt-2 flex items-center gap-1">
+        <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Upload signed authorization letter from department head.
     </p>
 
 </div>
@@ -780,132 +801,157 @@ if (error.response) {
                         <div>
 
                             <label class="form-label">
-                                Email Address
+                                Email Address <span class="text-red-500">*</span>
                             </label>
 
                             <input type="email"
                                 name="email"
                                 class="modern-input"
-                                placeholder="Enter email address"
+                                placeholder="you@domain.gov.ph"
                                 required>
 
                         </div>
 
                         <!-- PASSWORD -->
-                        <div class="relative">
+                        <div class="relative md:col-span-2 sm:col-span-1">
 
                             <label class="form-label">
-                                Password
+                                Password <span class="text-red-500">*</span>
                             </label>
 
-                            <input type="password"
-                                name="password"
-                                id="password"
-                                class="modern-input pr-14"
-                                placeholder="Enter password"
-                                required>
+                            <div class="relative">
+                                <input type="password"
+                                    name="password"
+                                    id="password"
+                                    class="modern-input pr-14"
+                                    placeholder="Minimum 8 characters"
+                                    required>
 
-                            <!-- KEEPING ORIGINAL FUNCTION -->
-                            <button type="button"
-                                onclick="togglePassword('password', this)"
-                                class="eye-btn">
+                                <!-- KEEPING ORIGINAL FUNCTION -->
+                                <button type="button"
+                                    onclick="togglePassword('password', this)"
+                                    class="eye-btn">
 
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="h-5 w-5"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor">
 
-                                    <path stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
 
-                                    <path stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        <path stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
 
-                                </svg>
+                                    </svg>
 
-                            </button>
+                                </button>
+                            </div>
+
+                            <!-- PASSWORD STRENGTH METER -->
+                            <div id="passwordStrengthContainer" class="mt-2">
+                                <div class="flex items-center justify-between text-xs font-semibold text-slate-500 mb-1">
+                                    <span>Password Complexity:</span>
+                                    <span id="passwordStrengthLabel" class="text-slate-400 font-bold">Too Short</span>
+                                </div>
+                                <div class="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden flex">
+                                    <div id="passwordStrengthBar" class="h-full w-0 bg-red-500 transition-all duration-300"></div>
+                                </div>
+                            </div>
 
                         </div>
 
                         <!-- CONFIRM PASSWORD -->
-                        <div class="relative">
+                        <div class="relative md:col-span-2 sm:col-span-1">
 
                             <label class="form-label">
-                                Confirm Password
+                                Confirm Password <span class="text-red-500">*</span>
                             </label>
 
-                            <input type="password"
-                                name="password_confirmation"
-                                id="password_confirmation"
-                                class="modern-input pr-14"
-                                placeholder="Confirm password"
-                                required>
+                            <div class="relative">
+                                <input type="password"
+                                    name="password_confirmation"
+                                    id="password_confirmation"
+                                    class="modern-input pr-14"
+                                    placeholder="Re-enter password"
+                                    required>
 
-                            <!-- KEEPING ORIGINAL FUNCTION -->
-                            <button type="button"
-                                onclick="togglePassword('password_confirmation', this)"
-                                class="eye-btn">
+                                <!-- KEEPING ORIGINAL FUNCTION -->
+                                <button type="button"
+                                    onclick="togglePassword('password_confirmation', this)"
+                                    class="eye-btn">
 
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                    class="h-5 w-5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="h-5 w-5"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor">
 
-                                    <path stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
 
-                                    <path stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                        stroke-width="2"
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        <path stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
 
-                                </svg>
+                                    </svg>
 
-                            </button>
+                                </button>
+                            </div>
+
+                            <p id="passwordMatchHint" class="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                                Must match password above.
+                            </p>
 
                         </div>
 
                     </div>
 
 <!-- SIGNATURE SECTION -->
-<div class="rounded-3xl border border-slate-200 bg-slate-50 p-5 sm:p-6">
+<div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-5 sm:p-6 shadow-sm">
 
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
 
         <div>
-            <h3 class="text-lg font-semibold text-slate-800">
-                Digital Signature
-            </h3>
-            <p class="text-sm text-slate-500">
-                Draw and save your signature for identity verification.
+            <div class="flex items-center gap-2">
+                <h3 class="text-lg font-bold text-slate-800">
+                    Digital Signature
+                </h3>
+                <span id="signatureStatusBadge" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                    ⚠️ Required
+                </span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">
+                Draw and click Save to lock your digital signature for identity verification.
             </p>
         </div>
 
-        <div class="flex gap-3">
+        <div class="flex gap-2">
 
             <button type="button"
                 id="clearSignatureBtn"
-                class="bg-amber-500 hover:bg-amber-600 text-white px-5 py-3 rounded-2xl font-medium shadow-lg">
+                class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-4 py-2.5 rounded-xl font-semibold text-sm transition">
                 Clear
             </button>
 
             <button type="button"
                 id="saveSignatureBtn"
-                class="bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-2xl font-medium shadow-lg">
+                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-md transition flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                 Save
             </button>
 
             <button type="button"
                 id="editSignatureBtn"
-                class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-medium shadow-lg hidden">
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-semibold text-sm shadow-md hidden transition">
                 Edit
             </button>
 
@@ -914,16 +960,50 @@ if (error.response) {
     </div>
 
     <!-- SIGNATURE CANVAS -->
-    <div class="relative w-full rounded-3xl overflow-hidden border border-slate-200 bg-white shadow-xl">
+    <div class="relative w-full rounded-2xl overflow-hidden border border-slate-300 bg-white shadow-inner">
 
         <canvas id="signaturePad"
-            class="w-full h-[260px] sm:h-[350px] md:h-[420px] touch-none"></canvas>
+            class="w-full h-[220px] sm:h-[280px] touch-none cursor-crosshair"></canvas>
 
     </div>
 
     <!-- HIDDEN INPUT -->
     <input type="hidden" name="signature" id="signatureInput">
 
+</div>
+
+<!-- REGISTRATION CAPTCHA SECTION -->
+<div class="rounded-3xl border border-slate-200 bg-slate-50/80 p-5 sm:p-6 shadow-sm">
+    <div class="flex items-center justify-between mb-3">
+        <div>
+            <h4 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                </svg>
+                Security Puzzle Verification
+            </h4>
+            <p class="text-xs text-slate-500 mt-0.5">
+                Slide the puzzle piece into position to verify human registration.
+            </p>
+        </div>
+        <button type="button" id="refreshRegisterPuzzleBtn" onclick="loadRegisterPuzzleCaptcha()" class="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-sm transition">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Refresh
+        </button>
+    </div>
+
+    <div class="relative w-[300px] h-[140px] mx-auto rounded-2xl overflow-hidden shadow-inner border border-slate-300 bg-slate-900 select-none">
+        <canvas id="registerPuzzleCanvas" width="300" height="140" class="block w-full h-full"></canvas>
+        <canvas id="registerPieceCanvas" width="45" height="45" class="absolute top-0 left-0 pointer-events-none transition-transform duration-75" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));"></canvas>
+    </div>
+
+    <div class="mt-3 relative w-[300px] mx-auto">
+        <input type="range" id="registerPuzzleSlider" min="0" max="255" value="0"
+            class="w-full h-9 accent-blue-600 bg-slate-200 rounded-xl cursor-pointer appearance-none outline-none focus:ring-2 focus:ring-blue-400">
+        <div id="registerPuzzleStatus" class="text-center text-xs font-semibold mt-2 text-slate-500">
+            Slide the puzzle piece to fit the target slot
+        </div>
+    </div>
 </div>
 
 
@@ -1473,6 +1553,12 @@ document.addEventListener('DOMContentLoaded', function () {
         saveBtn.classList.add('hidden');
         editBtn.classList.remove('hidden');
 
+        const statusBadge = document.getElementById('signatureStatusBadge');
+        if (statusBadge) {
+            statusBadge.innerHTML = '✓ Signature Saved';
+            statusBadge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200';
+        }
+
         Swal.fire({
             icon: 'success',
             title: 'Signature Saved',
@@ -1493,6 +1579,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         input.value = "";
 
+        const statusBadge = document.getElementById('signatureStatusBadge');
+        if (statusBadge) {
+            statusBadge.innerHTML = '⚠️ Required';
+            statusBadge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200';
+        }
+
         Swal.fire({
             icon: 'info',
             title: 'Edit Mode Enabled',
@@ -1506,6 +1598,11 @@ document.addEventListener('DOMContentLoaded', function () {
     clearBtn.addEventListener('click', () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         input.value = "";
+        const statusBadge = document.getElementById('signatureStatusBadge');
+        if (statusBadge) {
+            statusBadge.innerHTML = '⚠️ Required';
+            statusBadge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200';
+        }
     });
 
     // =========================
@@ -1597,14 +1694,22 @@ document.addEventListener('DOMContentLoaded', function () {
     /* EYE BUTTON */
     .eye-btn {
         position: absolute;
-        right: 18px;
-        top: 48px;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
         color: #64748b;
-        transition: .2s;
+        transition: all .2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px;
+        border-radius: 10px;
+        z-index: 10;
     }
 
     .eye-btn:hover {
         color: #0f172a;
+        background-color: #f1f5f9;
     }
 
     /* SCROLLBAR */
@@ -1720,6 +1825,115 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 <script>
+let currentRegisterPuzzleData = null;
+let isRegisterPuzzleVerified = false;
+
+async function loadRegisterPuzzleCaptcha() {
+    isRegisterPuzzleVerified = false;
+    currentRegisterPuzzleData = null;
+
+    const statusEl = document.getElementById('registerPuzzleStatus');
+    const slider = document.getElementById('registerPuzzleSlider');
+    const canvas = document.getElementById('registerPuzzleCanvas');
+    const pieceCanvas = document.getElementById('registerPieceCanvas');
+
+    if (!canvas || !pieceCanvas || !slider) return;
+
+    statusEl.innerHTML = '<span class="text-slate-400">Loading security puzzle...</span>';
+    statusEl.className = "text-center text-xs font-medium mt-2 text-slate-500";
+    slider.value = 0;
+    slider.disabled = true;
+    pieceCanvas.style.transform = 'translateX(0px)';
+
+    try {
+        const res = await axios.get("{{ url('/register/puzzle') }}");
+        currentRegisterPuzzleData = res.data;
+
+        const ctx = canvas.getContext('2d');
+        const pCtx = pieceCanvas.getContext('2d');
+        const w = 300, h = 140;
+        const pw = 45, ph = 45;
+        const targetX = currentRegisterPuzzleData.target_x;
+        const targetY = currentRegisterPuzzleData.target_y;
+
+        // Render colorful procedural background
+        const grad = ctx.createLinearGradient(0, 0, w, h);
+        grad.addColorStop(0, '#0f172a');
+        grad.addColorStop(0.5, '#1e293b');
+        grad.addColorStop(1, '#0284c7');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Add geometric pattern details
+        const seed = currentRegisterPuzzleData.seed || 5678;
+        for (let i = 0; i < 7; i++) {
+            ctx.beginPath();
+            ctx.arc((seed * (i + 1) * 41) % w, (seed * (i + 1) * 67) % h, 20 + (i * 7), 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${(seed + i * 50) % 360}, 80%, 60%, 0.4)`;
+            ctx.fill();
+        }
+
+        // Draw grid overlay lines
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < w; x += 20) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+        }
+        for (let y = 0; y < h; y += 20) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+        }
+
+        // Header watermark
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.fillText('ACCOUNT REGISTRATION CAPTCHA', 10, 18);
+
+        // Copy original piece graphic to pieceCanvas
+        pCtx.clearRect(0, 0, pw, ph);
+        pCtx.drawImage(canvas, targetX, targetY, pw, ph, 0, 0, pw, ph);
+
+        // Highlight border of floating piece
+        pCtx.lineWidth = 2;
+        pCtx.strokeStyle = '#38bdf8';
+        pCtx.strokeRect(0, 0, pw, ph);
+
+        // Draw dark cutout target box on main canvas
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+        ctx.fillRect(targetX, targetY, pw, ph);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#38bdf8';
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(targetX, targetY, pw, ph);
+        ctx.setLineDash([]);
+
+        // Position pieceCanvas vertically
+        pieceCanvas.style.top = targetY + 'px';
+        pieceCanvas.style.left = '0px';
+
+        slider.disabled = false;
+        slider.max = w - pw;
+        statusEl.innerHTML = 'Slide the puzzle piece to fit the target slot';
+        statusEl.className = "text-center text-xs font-semibold mt-2 text-blue-600";
+
+        slider.oninput = () => {
+            const val = parseInt(slider.value, 10);
+            pieceCanvas.style.transform = `translateX(${val}px)`;
+
+            if (Math.abs(val - targetX) <= 6) {
+                isRegisterPuzzleVerified = true;
+                statusEl.innerHTML = '✓ CAPTCHA Aligned! Security Verification Passed.';
+                statusEl.className = "text-center text-xs font-bold mt-2 text-emerald-600";
+            } else {
+                isRegisterPuzzleVerified = false;
+                statusEl.innerHTML = 'Slide to align the puzzle piece into position';
+                statusEl.className = "text-center text-xs font-semibold mt-2 text-blue-600";
+            }
+        };
+
+    } catch (e) {
+        statusEl.innerHTML = '<span class="text-red-500">Failed to load CAPTCHA. Click Refresh.</span>';
+    }
+}
 
 // =====================
 // MODAL OPEN / CLOSE
@@ -1733,6 +1947,7 @@ function openModal() {
 
   setTimeout(() => {
     content.classList.add('opacity-100', 'scale-100');
+    loadRegisterPuzzleCaptcha();
   }, 50);
 }
 
@@ -1817,11 +2032,61 @@ function togglePassword(id, btn) {
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
+    // PASSWORD STRENGTH EVALUATOR
+    const passInput = document.getElementById('password');
+    const strengthBar = document.getElementById('passwordStrengthBar');
+    const strengthLabel = document.getElementById('passwordStrengthLabel');
+
+    if (passInput && strengthBar && strengthLabel) {
+        passInput.addEventListener('input', () => {
+            const val = passInput.value;
+            let score = 0;
+            if (val.length >= 8) score++;
+            if (/[A-Z]/.test(val)) score++;
+            if (/[0-9]/.test(val)) score++;
+            if (/[^A-Za-z0-9]/.test(val)) score++;
+
+            if (val.length === 0) {
+                strengthBar.style.width = '0%';
+                strengthLabel.textContent = 'Too Short';
+                strengthLabel.className = 'text-slate-400 font-bold';
+            } else if (score <= 1) {
+                strengthBar.style.width = '25%';
+                strengthBar.className = 'h-full bg-red-500 transition-all duration-300';
+                strengthLabel.textContent = 'Weak';
+                strengthLabel.className = 'text-red-500 font-bold';
+            } else if (score === 2 || score === 3) {
+                strengthBar.style.width = '65%';
+                strengthBar.className = 'h-full bg-amber-500 transition-all duration-300';
+                strengthLabel.textContent = 'Medium';
+                strengthLabel.className = 'text-amber-500 font-bold';
+            } else {
+                strengthBar.style.width = '100%';
+                strengthBar.className = 'h-full bg-emerald-500 transition-all duration-300';
+                strengthLabel.textContent = 'Strong ✓';
+                strengthLabel.className = 'text-emerald-600 font-bold';
+            }
+        });
+    }
+
     const registerForm = document.querySelector('#registerForm');
     if (!registerForm) return;
 
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        const registerBtn = document.getElementById('registerBtn');
+        const honeypotVal = document.getElementById('b_website')?.value?.trim();
+
+        // 1. HONEYPOT BOT CHECK
+        if (honeypotVal) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Submission Blocked',
+                text: 'Automated bot activity detected.'
+            });
+            return;
+        }
 
         const designation = registerForm.querySelector('input[name="designation"]').value.trim();
         const name = registerForm.querySelector('input[name="name"]').value.trim();
@@ -1830,7 +2095,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const email = registerForm.querySelector('input[name="email"]').value.trim();
         const password = registerForm.querySelector('input[name="password"]').value.trim();
         const password_confirmation = registerForm.querySelector('input[name="password_confirmation"]').value.trim();
-
         const signature = document.getElementById('signatureInput')?.value?.trim();
 
         // =====================
@@ -1839,8 +2103,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!name || !designation || !office_id || !role || !email || !password || !password_confirmation || !signature) {
             Swal.fire({
                 icon: 'warning',
-                title: 'Missing Fields',
-                text: 'Please complete all fields including your signature.'
+                title: 'Missing Required Fields',
+                text: 'Please complete all required fields including saving your digital signature.'
             });
             return;
         }
@@ -1853,67 +2117,113 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             return;
         }
-if (
-    role === 'presentative_staff' &&
-    !document.getElementById('authorization_letter').files.length
-) {
-    Swal.fire({
-        icon: 'warning',
-        title: 'Authorization Letter Required',
-        text: 'Please upload the authorization letter.'
-    });
-    return;
-}
+
+        if (role === 'presentative_staff' && !document.getElementById('authorization_letter').files.length) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Authorization Letter Required',
+                text: 'Please upload the required authorization letter.'
+            });
+            return;
+        }
+
+        // =====================
+        // CAPTCHA PUZZLE CHECK
+        // =====================
+        const slider = document.getElementById('registerPuzzleSlider');
+        const sliderVal = slider ? parseInt(slider.value, 10) : 0;
+
+        if (!currentRegisterPuzzleData || !currentRegisterPuzzleData.token) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Security CAPTCHA Loading',
+                text: 'Please refresh the puzzle CAPTCHA and try again.'
+            });
+            loadRegisterPuzzleCaptcha();
+            return;
+        }
+
+        if (!isRegisterPuzzleVerified && Math.abs(sliderVal - currentRegisterPuzzleData.target_x) > 8) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'CAPTCHA Verification Required',
+                text: 'Please solve the puzzle by sliding the piece into position.'
+            });
+            return;
+        }
+
+        // LOCK SUBMIT BUTTON (ANTI DUPLICATE SUBMISSION)
+        if (registerBtn) {
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = `
+                <span class="flex items-center justify-center gap-2">
+                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Encrypting & Processing Account...
+                </span>
+            `;
+        }
 
         Swal.fire({
-            title: 'Registering...',
-            text: 'Please wait',
+            title: 'Registering Account...',
+            text: 'Encrypting credentials and validating security token',
             allowOutsideClick: false,
             didOpen: () => Swal.showLoading()
         });
 
         try {
-const formData = new FormData();
+            const formData = new FormData();
 
-formData.append('designation', designation);
-formData.append('name', name);
-formData.append('office_id', office_id);
-formData.append('role', role);
-formData.append('email', email);
-formData.append('password', password);
-formData.append('password_confirmation', password_confirmation);
-formData.append('signature', signature);
+            formData.append('designation', designation);
+            formData.append('name', name);
+            formData.append('office_id', office_id);
+            formData.append('role', role);
+            formData.append('email', email);
+            formData.append('password', password);
+            formData.append('password_confirmation', password_confirmation);
+            formData.append('signature', signature);
 
-const authorizationLetter =
-    document.getElementById('authorization_letter')?.files[0];
+            // SECURITY CAPTCHA & HONEYPOT DATA
+            formData.append('captcha_token', currentRegisterPuzzleData.token);
+            formData.append('captcha_x', sliderVal);
+            formData.append('b_website', honeypotVal || '');
 
-if (authorizationLetter) {
-    formData.append('authorization_letter', authorizationLetter);
-}
+            const authorizationLetter = document.getElementById('authorization_letter')?.files[0];
+            if (authorizationLetter) {
+                formData.append('authorization_letter', authorizationLetter);
+            }
 
-const response = await axios.post('/register', formData, {
-    headers: {
-        'Content-Type': 'multipart/form-data'
-    }
-});
+            const response = await axios.post('/register', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
 
             Swal.close();
 
             Swal.fire({
                 icon: 'success',
-                title: 'Success!',
+                title: 'Registration Successful!',
                 text: response.data.message,
-                confirmButtonText: 'OK'
+                confirmButtonText: 'Continue to Login',
+                confirmButtonColor: '#2563eb'
             }).then(() => {
                 window.location.href = '/';
             });
 
         } catch (error) {
-
             Swal.close();
 
-            let message = 'Something went wrong. Please try again.';
+            // RE-ENABLE BUTTON & RELOAD CAPTCHA ON ERROR
+            if (registerBtn) {
+                registerBtn.disabled = false;
+                registerBtn.innerHTML = 'Register Account';
+            }
+            loadRegisterPuzzleCaptcha();
 
+            let message = 'Something went wrong. Please try again.';
             if (error.response?.data?.message) {
                 message = error.response.data.message;
             }
@@ -1921,7 +2231,8 @@ const response = await axios.post('/register', formData, {
             Swal.fire({
                 icon: 'error',
                 title: 'Registration Failed',
-                text: message
+                text: message,
+                confirmButtonColor: '#dc2626'
             });
         }
     });
