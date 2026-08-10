@@ -31,10 +31,11 @@ Route::get(
 Route::post(
     '/forgot-password',
     [ForgotPasswordController::class,'send']
-);
+)->middleware('throttle:5,1');
 
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])
-    ->name('password.update');
+    ->name('password.update')
+    ->middleware('throttle:5,1');
 
 
 Route::get('/reset-password/{token}', function ($token) {
@@ -123,9 +124,9 @@ Route::get('/api/check-auth', function () {
     return response()->json(['authenticated' => false], 401);
 });
 
-Route::post('/logincontrol', [AuthController::class, 'loginControl']);
+Route::post('/logincontrol', [AuthController::class, 'loginControl'])->middleware('throttle:10,1');
 
-Route::post('/register', [AuthController::class, 'register'])->name('register');
+Route::post('/register', [AuthController::class, 'register'])->name('register')->middleware('throttle:5,1');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
