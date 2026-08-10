@@ -66,163 +66,156 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
-<body class="bg-gray-100">
+<body class="min-h-screen bg-slate-950 font-sans antialiased text-slate-800 selection:bg-orange-500 selection:text-white flex flex-col md:flex-row relative overflow-x-hidden">
 
- 
-  <div class="flex min-h-screen">
-
-    
-    <div class="hidden lg:block w-1/2 relative h-screen">
-
-     
-      <div
-        class="absolute inset-0 bg-cover bg-center"
-        style="background-image: url('{{ asset('login-logo.png') }}');"
-      ></div>
-
-  
-      <div class="absolute inset-0"></div>
-
-   
-      {{-- <div class="relative z-10 flex h-full flex-col justify-center px-16 text-white">
-        <h1 class="text-4xl font-bold mb-4 animate-fade-slide">
-          Welcome Back
-        </h1>
-        <p class="text-lg opacity-90 max-w-md animate-fade-slide">
-          Login to manage your requests, track progress, and stay productive.
-        </p>
-      </div> --}}
+  <!-- LEFT PANEL: BACKGROUND IMAGE WITH S-CURVE DIVIDER -->
+  <div class="relative w-full md:w-1/2 lg:w-7/12 min-h-[40vh] md:min-h-screen overflow-hidden flex items-center justify-center bg-slate-950">
+    <!-- Background Image -->
+    <div class="absolute inset-0 w-full h-full bg-center bg-no-repeat"
+         style="background-image: url('{{ asset('finalbg.png') }}'); background-size: 100% 100%;">
     </div>
 
+    <!-- S-CURVE DIVIDER (Desktop / Medium Screens) -->
+    <svg class="absolute -right-1 top-0 bottom-0 h-full w-28 md:w-40 lg:w-56 text-slate-950 z-10 pointer-events-none hidden md:block"
+         viewBox="0 0 100 100" preserveAspectRatio="none" fill="currentColor">
+      <path d="M 0,0 C 70,25 30,75 100,100 L 105,100 L 105,0 Z"></path>
+    </svg>
 
-    <div class="w-full lg:w-1/2 flex items-center justify-center px-6">
+    <!-- S-CURVE DIVIDER (Mobile Screens) -->
+    <svg class="absolute -bottom-1 left-0 right-0 w-full h-16 md:h-24 text-slate-950 z-10 pointer-events-none block md:hidden"
+         viewBox="0 0 100 100" preserveAspectRatio="none" fill="currentColor">
+      <path d="M 0,0 C 25,75 75,25 100,100 L 100,105 L 0,105 Z"></path>
+    </svg>
+  </div>
 
-      <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 animate-fade-slide">
-
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">
-          Sign In
+  <!-- RIGHT PANEL: MAIN LOGIN FORM CONTAINER -->
+  <div class="relative z-20 w-full md:w-1/2 lg:w-5/12 min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-10 bg-slate-950">
+    
+    <div class="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 sm:p-10 animate-fade-slide transform transition-all duration-300">
+      
+      <!-- LOGO & BRAND HEADER -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-400 text-white shadow-lg shadow-orange-500/30 mb-4 transform hover:scale-105 transition-transform duration-300">
+          <img src="{{ asset('logo.png') }}" alt="Logo" class="w-10 h-10 object-contain" onerror="this.remove()">
+        </div>
+        <h2 class="text-xs font-bold tracking-widest uppercase text-orange-600 mb-1">
+          Welcome to
         </h2>
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">
-          SUPPLIER’S EVALUATION SYSTEM
-        </h2>
-        <p class="text-sm text-gray-500 mb-6">
-          Please enter your credentials
+        <h1 class="text-2xl font-black text-slate-900 tracking-tight leading-snug">
+          SUPPLIER'S EVALUATION SYSTEM
+        </h1>
+        <p class="text-xs text-slate-500 mt-1 font-medium">
+          Sign in to access your portal & dashboard
         </p>
+      </div>
 
-        <form class="space-y-5">
-
-          
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Email Address
-            </label>
+      <!-- FORM -->
+      <form class="space-y-5">
+        
+        <!-- EMAIL -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+            Email Address
+          </label>
+          <div class="relative flex items-center">
             <input
               type="email"
               placeholder="you@example.com"
-              class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
+              class="w-full px-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none transition-all shadow-sm"
               required
             />
           </div>
+        </div>
 
-          
-
-<div class="space-y-1">
-    <label class="block text-sm font-medium text-gray-700">
-        Password
-    </label>
-
-    <div class="relative">
-        <input
-            id="loginPassword"
-            type="password"
-            placeholder="••••••••"
-            class="w-full px-4 py-3 pr-12 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:outline-none transition"
-            required
-        />
-
-        <button
-            type="button"
-            onclick="togglePassword('loginPassword', this)"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition p-1.5 rounded-lg hover:bg-slate-100">
-
-            <svg xmlns="http://www.w3.org/2000/svg"
-                 class="h-5 w-5"
-                 fill="none"
-                 viewBox="0 0 24 24"
-                 stroke="currentColor">
-
-                <path stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-
-                <path stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5
-                         c4.477 0 8.268 2.943 9.542 7
-                         -1.274 4.057-5.065 7-9.542 7
-                         -4.477 0-8.268-2.943-9.542-7z"/>
-            </svg>
-
-        </button>
-    </div>
-</div>
-
-      
-          <div class="flex items-center justify-between text-sm">
-            <label class="flex items-center gap-2">
-              <input type="checkbox" hidden class="rounded text-blue-600">
-              {{-- Remember me --}}
+        <!-- PASSWORD -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Password
             </label>
-<a href="#"
-   onclick="showForgotPasswordModal(event)"
-   class="text-blue-600 hover:underline">
-    Forgot password?
-</a>
+            <a href="#"
+               onclick="showForgotPasswordModal(event)"
+               class="text-xs font-semibold text-orange-600 hover:text-orange-700 hover:underline transition">
+              Forgot password?
+            </a>
           </div>
 
-      
+          <div class="relative flex items-center">
+            <input
+                id="loginPassword"
+                type="password"
+                placeholder="••••••••"
+                class="w-full px-4 py-3.5 pr-12 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:outline-none transition-all shadow-sm"
+                required
+            />
+
+            <button
+                type="button"
+                onclick="togglePassword('loginPassword', this)"
+                class="absolute right-3 text-slate-400 hover:text-orange-600 transition p-2 rounded-lg hover:bg-orange-50">
+
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-5 w-5"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M2.458 12C3.732 7.943 7.523 5 12 5
+                             c4.477 0 8.268 2.943 9.542 7
+                             -1.274 4.057-5.065 7-9.542 7
+                             -4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+
+            </button>
+          </div>
+        </div>
+
+        <!-- SUBMIT BUTTON -->
         <button
             id="loginBtn"
             type="submit"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition-all duration-300 shadow-md hover:shadow-lg"
+            class="w-full mt-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 active:scale-[0.98]"
         >
-            Login
+            Sign In to Portal
         </button>
 
-        </form>
+      </form>
 
-                   
-        <p class="text-center text-sm text-gray-600 mt-4">
+      <!-- REGISTRATION FOOTER LINK -->
+      <div class="text-center text-xs text-slate-600 mt-6 pt-4 border-t border-slate-100">
+        <p>
           Don't have an account?
-            <button onclick="showPrivacyNotice()" class="text-blue-600 hover:underline font-medium">
-                Register here
-            </button>
+          <button onclick="showPrivacyNotice()" class="text-orange-600 hover:text-orange-700 hover:underline font-bold ml-1">
+            Register here
+          </button>
         </p>
-
- 
-<div class="mt-6 pt-4 border-t border-gray-200 text-center">
-    <p class="text-xs text-gray-500 leading-relaxed">
-        By using the Supplier's Evaluation System, you agree to our
-        {{-- <a href="#"
-            class="text-blue-600 hover:underline font-medium">
-            Terms of Use
-        </a>
-        and --}}
-        <a href="{{ route('privacy.privacy') }}"
-            class="text-blue-600 hover:underline font-medium">
-            Privacy Center
-        </a>.
-    </p>
-
-    <p class="text-xs text-gray-400 mt-2">
-        © 2026 OPPMO - Supplier's Evaluation System. All rights reserved.
-    </p>
-</div>
-
       </div>
+
+      <!-- LEGAL FOOTER -->
+      <div class="mt-6 text-center text-[11px] text-slate-400 leading-relaxed">
+        <p>
+          By using this system, you agree to our
+          <a href="{{ route('privacy.privacy') }}"
+              class="text-orange-600 hover:underline font-medium">
+              Privacy Center
+          </a>.
+        </p>
+        <p class="mt-1 font-mono text-[10px] text-slate-400">
+          © 2026 OPPMO - Supplier's Evaluation System
+        </p>
+      </div>
+
     </div>
+
+  </div>
 
 
 <script>
