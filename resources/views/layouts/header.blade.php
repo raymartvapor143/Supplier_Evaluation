@@ -71,3 +71,4 @@
     </style>
     <script src="{{asset('script/token.js')}}"></script>
   </head>
+  @include('layouts.loading')

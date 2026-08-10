@@ -34,6 +34,8 @@
   </style>
 </head>
 
+@include('layouts.loading')
+
 <script src="{{asset('script/block.js')}}"></script>
 
 <script>
@@ -299,20 +301,17 @@ if (savedEmail) {
             return;
         }
 
-        Swal.fire({
-            title: 'Logging in...',
-            text: 'Please wait',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
+        showGlobalLoading('Signing In to Portal...', 'Authenticating credentials, please wait');
 
         try {
             const response = await axios.post('/logincontrol', {
                 email: email,
                 password: password
+            }, {
+                loadingText: 'Signing In to Portal...'
             });
 
-            Swal.close();
+            hideGlobalLoading(true);
 
             Swal.fire({
                 icon: 'success',
@@ -338,7 +337,7 @@ if (savedEmail) {
 
         } catch (error) {
 
-            Swal.close();
+            hideGlobalLoading(true);
 
             let message = 'Something went wrong. Please try again.';
 
@@ -2159,12 +2158,7 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
         }
 
-        Swal.fire({
-            title: 'Registering Account...',
-            text: 'Encrypting credentials and validating security token',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
+        showGlobalLoading('Registering Account...', 'Encrypting credentials & validating security token');
 
         try {
             const formData = new FormData();
@@ -2194,7 +2188,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            Swal.close();
+            hideGlobalLoading(true);
 
             Swal.fire({
                 icon: 'success',
@@ -2207,7 +2201,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
         } catch (error) {
-            Swal.close();
+            hideGlobalLoading(true);
 
             // RE-ENABLE BUTTON & RELOAD CAPTCHA ON ERROR
             if (registerBtn) {

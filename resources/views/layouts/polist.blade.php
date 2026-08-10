@@ -8,7 +8,6 @@
                 w-full max-w-7xl max-h-[92vh]
                 flex flex-col overflow-hidden
                 border border-gray-100">
-        @include('layouts.pobulk')
 
         <!-- HEADER -->
 <!-- STICKY HEADER -->
@@ -124,7 +123,8 @@
 
                 <form id="uploadPOForm"
                       method="POST"
-                      enctype="multipart/form-data">
+                      enctype="multipart/form-data"
+                      onsubmit="if(typeof showGlobalLoading === 'function') showGlobalLoading('Uploading PDF...', 'Processing document, please wait');">
 
                     @csrf
 
@@ -567,262 +567,10 @@ z-50">
 <script>
 
 // ===============================
-// MODAL CONTROL
-// ===============================
-function openPOModal_v2() {
-    document.getElementById('poListModal_v2').classList.remove('hidden');
-    document.getElementById('poListModal_v2').classList.add('flex');
-    if (typeof updatePOPagination_v2 === 'function') {
-        updatePOPagination_v2();
-    }
-}
-
-function closePOModal_v2() {
-    document.getElementById('poListModal_v2').classList.add('hidden');
-    document.getElementById('poListModal_v2').classList.remove('flex');
-}
-
-function openPOInsertModal_v2() {
-    document.getElementById('poInsertModal_v2').classList.remove('hidden');
-    document.getElementById('poInsertModal_v2').classList.add('flex');
-}
-
-function closePOInsertModal_v2() {
-    document.getElementById('poInsertModal_v2').classList.add('hidden');
-    document.getElementById('poInsertModal_v2').classList.remove('flex');
-}
-
-// ===============================
-// EVALUATE MODAL
-// ===============================
-function openPOEvaluateModal_v2(poId, poNo, supplier, endUser) {
-
-    document.getElementById('eval_po_no_v2').value = poNo;
-    document.getElementById('eval_supplier_v2').value = supplier;
-    document.getElementById('eval_end_user_v2').value = endUser;
-
-    document.getElementById('poEvaluateForm_v2').action =
-        `/purchase-orders/${poId}/evaluate`;
-
-    document.getElementById('poEvaluateModal_v2').classList.remove('hidden');
-    document.getElementById('poEvaluateModal_v2').classList.add('flex');
-}
-
-function closePOEvaluateModal_v2() {
-    document.getElementById('poEvaluateModal_v2').classList.add('hidden');
-    document.getElementById('poEvaluateModal_v2').classList.remove('flex');
-}
-
-
-
-// ===============================
-// SEARCH
-// ===============================
-function searchPO_v2() {
-    let input = document.getElementById("poSearchInput_v2");
-    let filter = input.value.toLowerCase();
-
-    document.querySelectorAll(".po-row-v2").forEach(row => {
-        row.style.display = row.textContent.toLowerCase().includes(filter) ? "" : "none";
-    });
-}
-
-// ===============================
-// ACTION DROPDOWN (SMART POSITION)
-// ===============================
-function togglePOAction_v2(button) {
-    let menu = button.nextElementSibling;
-    let rect = button.getBoundingClientRect();
-
-    document.querySelectorAll('.po-action-menu-v2').forEach(el => {
-        if (el !== menu) el.classList.add('hidden');
-    });
-
-    if (menu.classList.contains('hidden')) {
-
-        const menuWidth = 160;
-        const offset = 8;
-
-        let leftPosition = rect.right + offset;
-
-        if (leftPosition + menuWidth > window.innerWidth) {
-            leftPosition = rect.left - menuWidth - offset;
-        }
-
-        menu.style.position = 'fixed';
-        menu.style.top = rect.top + 'px';
-        menu.style.left = leftPosition + 'px';
-
-        menu.classList.remove('hidden');
-
-    } else {
-        menu.classList.add('hidden');
-    }
-}
-
-// CLOSE OUTSIDE CLICK
-document.addEventListener('click', function (e) {
-    if (!e.target.closest('.po-action-wrapper-v2')) {
-        document.querySelectorAll('.po-action-menu-v2').forEach(el => {
-            el.classList.add('hidden');
-        });
-    }
-});
-
-@if(session('po_deleted'))
-Swal.fire({
-    icon: 'success',
-    title: 'Purchase Order Deleted',
-    text: '{{ session("po_deleted") }}',
-    confirmButtonColor: '#f97316',
-    background: '#fff',
-    timer: 2200,
-    timerProgressBar: true,
-    showConfirmButton: false,
-    customClass: {
-        popup: 'rounded-2xl'
-    }
-});
-@endif
-// ===============================
-// SWEETALERT - ADD PO SUCCESS
-// ===============================
-@if(session('po_success'))
-Swal.fire({
-    icon: 'success',
-    title: 'Purchase Order Added',
-    html: `
-        The Purchase Order has been successfully added.<br><br>
-        You can now view it in the <b>Purchase Order List</b>.
-    `,
-    confirmButtonText: 'OK'
-});
-@endif
-
-
-// ===============================
-// SWEETALERT - EVALUATION SUCCESS
-// ===============================
-@if(session('po_success_added'))
-Swal.fire({
-    icon: 'success',
-    title: 'Success',
-    html: `
-        The P.O. has been saved to the <b>Evaluation Management</b> list.<br><br>
-        Please proceed to the <b>Pending</b> tab to evaluate the supplier.
-    `,
-    confirmButtonText: 'OK'
-});
-@endif
-
-
-// ===============================
-// SWEETALERT - ERROR
-// ===============================
-@if(session('error'))
-Swal.fire({
-    icon: 'error',
-    title: 'Error',
-    text: '{{ session('error') }}',
-    confirmButtonText: 'OK'
-});
-@endif
-
-@if(session('po_updated'))
-Swal.fire({
-    icon: 'success',
-    title: 'Updated!',
-    text: 'Purchase Order has been saved.',
-    timer: 2000,
-    showConfirmButton: false
-});
-@endif
-
-
-@if(session('success_pdf'))
-Swal.fire({
-    icon: 'success',
-    title: 'Updated!',
-    text: 'Purchase Order PDF uploaded successfully.',
-    timer: 2000,
-    showConfirmButton: false
-});
-openPOModal_v2();
-@endif
-
-@if(session('error_pdf'))
-Swal.fire({
-    icon: 'error',
-    title: 'Upload Failed!',
-    text: "{{ session('error_pdf') }}",
-    confirmButtonText: 'OK'
-});
-openPOModal_v2();
-@endif
-
-@if(session('po_error'))
-
-Swal.fire({
-    icon: 'error',
-    title: 'Update Failed!',
-    text: "{{ session('po_error') }}",
-    confirmButtonText: 'OK'
-});
-@endif
-
-
-@if(session('po_error_update'))
-
-Swal.fire({
-    icon: 'error',
-    title: 'Update Failed!',
-    text: "{{ session('po_error_update') }}",
-    confirmButtonText: 'OK'
-});
-@endif
-
-
-
-
-
-
-
-
-
-function confirmDeletePO(event, form) {
-    event.preventDefault();
-
-    Swal.fire({
-        title: 'Delete Purchase Order?',
-        text: "This action cannot be undone.",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#f97316',
-        cancelButtonColor: '#9ca3af',
-        confirmButtonText: 'Yes, Delete',
-        cancelButtonText: 'Cancel',
-        reverseButtons: true,
-        background: '#fff',
-        customClass: {
-            popup: 'rounded-2xl',
-            confirmButton: 'rounded-lg px-4 py-2',
-            cancelButton: 'rounded-lg px-4 py-2'
-        }
-    }).then((result) => {
-
-        if (result.isConfirmed) {
-            form.submit();
-        }
-
-    });
-}
-
-
-// ===============================
 // PAGINATION & SEARCH (15 ITEMS PER PAGE)
 // ===============================
-let poCurrentPage_v2 = 1;
-const poItemsPerPage_v2 = 15;
+var poCurrentPage_v2 = 1;
+var poItemsPerPage_v2 = 15;
 
 function updatePOPagination_v2() {
     const tbody = document.getElementById('poTableBody_v2');
@@ -907,7 +655,6 @@ function sortPOByPDF_v2() {
     );
 
     rows.sort((a, b) => {
-
         let aHasPDF = a.classList.contains('has-pdf');
         let bHasPDF = b.classList.contains('has-pdf');
 
@@ -918,7 +665,6 @@ function sortPOByPDF_v2() {
         return 0;
     });
 
-
     rows.forEach(row => {
         tbody.appendChild(row);
     });
@@ -926,10 +672,223 @@ function sortPOByPDF_v2() {
     updatePOPagination_v2();
 }
 
+// ===============================
+// MODAL CONTROL
+// ===============================
+function openPOModal_v2() {
+    document.getElementById('poListModal_v2').classList.remove('hidden');
+    document.getElementById('poListModal_v2').classList.add('flex');
+    sortPOByPDF_v2();
+}
 
-// Run when modal opens
+function closePOModal_v2() {
+    document.getElementById('poListModal_v2').classList.add('hidden');
+    document.getElementById('poListModal_v2').classList.remove('flex');
+}
+
+function openPOInsertModal_v2() {
+    document.getElementById('poInsertModal_v2').classList.remove('hidden');
+    document.getElementById('poInsertModal_v2').classList.add('flex');
+}
+
+function closePOInsertModal_v2() {
+    document.getElementById('poInsertModal_v2').classList.add('hidden');
+    document.getElementById('poInsertModal_v2').classList.remove('flex');
+}
+
+// ===============================
+// EVALUATE MODAL
+// ===============================
+function openPOEvaluateModal_v2(poId, poNo, supplier, endUser) {
+    document.getElementById('eval_po_no_v2').value = poNo;
+    document.getElementById('eval_supplier_v2').value = supplier;
+    document.getElementById('eval_end_user_v2').value = endUser;
+
+    document.getElementById('poEvaluateForm_v2').action =
+        `/purchase-orders/${poId}/evaluate`;
+
+    document.getElementById('poEvaluateModal_v2').classList.remove('hidden');
+    document.getElementById('poEvaluateModal_v2').classList.add('flex');
+}
+
+function closePOEvaluateModal_v2() {
+    document.getElementById('poEvaluateModal_v2').classList.add('hidden');
+    document.getElementById('poEvaluateModal_v2').classList.remove('flex');
+}
+
+// ===============================
+// ACTION DROPDOWN (SMART POSITION)
+// ===============================
+function togglePOAction_v2(button) {
+    let menu = button.nextElementSibling;
+    let rect = button.getBoundingClientRect();
+
+    document.querySelectorAll('.po-action-menu-v2').forEach(el => {
+        if (el !== menu) el.classList.add('hidden');
+    });
+
+    if (menu.classList.contains('hidden')) {
+        const menuWidth = 160;
+        const offset = 8;
+        let leftPosition = rect.right + offset;
+
+        if (leftPosition + menuWidth > window.innerWidth) {
+            leftPosition = rect.left - menuWidth - offset;
+        }
+
+        menu.style.position = 'fixed';
+        menu.style.top = rect.top + 'px';
+        menu.style.left = leftPosition + 'px';
+
+        menu.classList.remove('hidden');
+    } else {
+        menu.classList.add('hidden');
+    }
+}
+
+// CLOSE OUTSIDE CLICK
+document.addEventListener('click', function (e) {
+    if (!e.target.closest('.po-action-wrapper-v2')) {
+        document.querySelectorAll('.po-action-menu-v2').forEach(el => {
+            el.classList.add('hidden');
+        });
+    }
+});
+
+function confirmDeletePO(event, form) {
+    event.preventDefault();
+
+    Swal.fire({
+        title: 'Delete Purchase Order?',
+        text: "This action cannot be undone.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#f97316',
+        cancelButtonColor: '#9ca3af',
+        confirmButtonText: 'Yes, Delete',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        background: '#fff',
+        customClass: {
+            popup: 'rounded-2xl',
+            confirmButton: 'rounded-lg px-4 py-2',
+            cancelButton: 'rounded-lg px-4 py-2'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+}
+
+// ===============================
+// SWEETALERT TOAST & AUTO-OPEN HANDLERS
+// ===============================
+const POToast = Swal.mixin({
+    toast: true,
+    position: 'top-end',
+    showConfirmButton: false,
+    timer: 4500,
+    timerProgressBar: true,
+    customClass: {
+        container: 'z-[100000]',
+        popup: 'rounded-2xl shadow-xl border border-gray-100 font-sans'
+    },
+    didOpen: (toast) => {
+        toast.addEventListener('mouseenter', Swal.stopTimer);
+        toast.addEventListener('mouseleave', Swal.resumeTimer);
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     sortPOByPDF_v2();
+
+    @if(session('po_deleted'))
+    POToast.fire({
+        icon: 'success',
+        title: 'Purchase Order Deleted',
+        text: '{{ session("po_deleted") }}'
+    });
+    openPOModal_v2();
+    @endif
+
+    @if(session('po_success'))
+    POToast.fire({
+        icon: 'success',
+        title: 'Purchase Order Added',
+        text: 'The Purchase Order has been successfully added.'
+    });
+    openPOModal_v2();
+    @endif
+
+    @if(session('po_success_added'))
+    POToast.fire({
+        icon: 'success',
+        title: 'Saved to Evaluation',
+        text: 'The P.O. has been saved to Evaluation Management.'
+    });
+    openPOModal_v2();
+    @endif
+
+    @if(session('error'))
+    POToast.fire({
+        icon: 'error',
+        title: 'Error',
+        text: '{{ session('error') }}'
+    });
+    openPOModal_v2();
+    @endif
+
+    @if(session('po_updated'))
+    POToast.fire({
+        icon: 'success',
+        title: 'Updated Successfully',
+        text: 'Purchase Order has been saved.'
+    });
+    openPOModal_v2();
+    @endif
+
+    @if(session('success_pdf'))
+    POToast.fire({
+        icon: 'success',
+        title: 'Uploaded Successfully',
+        text: 'Purchase Order PDF uploaded successfully.'
+    });
+    openPOModal_v2();
+    @endif
+
+    @if(session('error_pdf'))
+    POToast.fire({
+        icon: 'error',
+        title: 'Upload Failed!',
+        text: "{{ session('error_pdf') }}"
+    });
+    openPOModal_v2();
+    @endif
+
+    @if(session('po_error'))
+    POToast.fire({
+        icon: 'error',
+        title: 'Update Failed!',
+        text: "{{ session('po_error') }}"
+    });
+    openPOModal_v2();
+    @endif
+
+    @if(session('po_error_update'))
+    POToast.fire({
+        icon: 'error',
+        title: 'Update Failed!',
+        text: "{{ session('po_error_update') }}"
+    });
+    openPOModal_v2();
+    @endif
+});
+
+window.addEventListener('pageshow', function () {
+    if (typeof sortPOByPDF_v2 === 'function') {
+        sortPOByPDF_v2();
+    }
 });
 
 </script>
