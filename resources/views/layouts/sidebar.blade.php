@@ -196,8 +196,8 @@ function toggleEvaluationsDropdown() {
           </span>
         </a>
 
-<a href="#"
-   onclick="openActivityLogs()"
+<a href="javascript:void(0)"
+   onclick="navigateOrRun('openActivityLogs')"
    class="sidebar-link flex items-center space-x-3 px-4 py-3 text-gray-600 rounded-xl
           hover:bg-gradient-to-r hover:from-orange-100 hover:to-orange-200 hover:text-primary
           transition-all duration-200 group">

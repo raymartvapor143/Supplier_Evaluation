@@ -76,16 +76,6 @@ public function store(Request $request)
         ]);
     }
 
-    ActivityLog::create([
-        'user_id'     => auth()->id(),
-        'role'        => auth()->user()->role,
-        'activity'    => 'Create Purchase Order',
-        'description' => "Created Purchase Order {$po->po_no}",
-        'status'      => 'success',
-        'ip_address'  => $request->ip(),
-        'user_agent'  => $request->userAgent(),
-    ]);
-
     return back()->with('po_success', 'Purchase Order added successfully.');
 }
 
@@ -177,16 +167,6 @@ public function storePOEvaluation(Request $request, $poId)
             'status' => 'Added'
         ]);
 
-
-        ActivityLog::create([
-            'user_id'     => $user->id,
-            'role'        => $user->role,
-            'activity'    => 'Create Evaluation from PO',
-            'description' => "Created evaluation for PO {$po->po_no} ({$request->supplier_name}) and marked PO as Added.",
-            'status'      => 'success',
-            'ip_address'  => $request->ip(),
-            'user_agent'  => $request->userAgent(),
-        ]);
 
         DB::commit();
 
@@ -407,16 +387,6 @@ public function uploadPdf(Request $request, $id)
 
             $po->update([
                 'pdf_po' => $path
-            ]);
-
-            ActivityLog::create([
-                'user_id'     => auth()->id(),
-                'role'        => auth()->user()->role,
-                'activity'    => 'Upload Purchase Order PDF',
-                'description' => "Uploaded PDF for PO {$po->po_no}",
-                'status'      => 'success',
-                'ip_address'  => $request->ip(),
-                'user_agent'  => $request->userAgent(),
             ]);
         }
 

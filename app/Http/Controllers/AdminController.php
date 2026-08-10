@@ -16,30 +16,103 @@ use Illuminate\Support\Facades\DB;
 class AdminController extends Controller
 {
 
-public function activityLogs(Request $request)
-{
-    $logs = ActivityLog::with('user')
-        ->when($request->role && $request->role != 'all', function ($q) use ($request) {
-            $q->where('role', $request->role);
-        })
-        ->when($request->search, function ($q) use ($request) {
-            $q->where(function ($query) use ($request) {
+    public function activityLogs(Request $request)
+    {
+        $query = ActivityLog::with('user')
+            ->when($request->role && $request->role !== 'all', function ($q) use ($request) {
+                $q->where('role', $request->role);
+            })
+            ->when($request->status && $request->status !== 'all', function ($q) use ($request) {
+                $q->where('status', $request->status);
+            })
+            ->when($request->from_date, function ($q) use ($request) {
+                $q->whereDate('created_at', '>=', $request->from_date);
+            })
+            ->when($request->to_date, function ($q) use ($request) {
+                $q->whereDate('created_at', '<=', $request->to_date);
+            })
+            ->when($request->search, function ($q) use ($request) {
+                $q->where(function ($query) use ($request) {
+                    $query->where('activity', 'like', "%{$request->search}%")
+                        ->orWhere('description', 'like', "%{$request->search}%")
+                        ->orWhere('ip_address', 'like', "%{$request->search}%")
+                        ->orWhereHas('user', function ($user) use ($request) {
+                            $user->where('name', 'like', "%{$request->search}%")
+                                ->orWhere('email', 'like', "%{$request->search}%");
+                        });
+                });
+            })
+            ->latest();
 
-                $query->where('activity','like',"%{$request->search}%")
-                      ->orWhere('description','like',"%{$request->search}%")
-                      ->orWhereHas('user',function($user) use ($request){
+        $logs = $query->paginate(15);
 
-                            $user->where('name','like',"%{$request->search}%");
+        return response()->json($logs);
+    }
 
-                      });
+    public function exportActivityLogs(Request $request)
+    {
+        $logs = ActivityLog::with('user')
+            ->when($request->role && $request->role !== 'all', function ($q) use ($request) {
+                $q->where('role', $request->role);
+            })
+            ->when($request->status && $request->status !== 'all', function ($q) use ($request) {
+                $q->where('status', $request->status);
+            })
+            ->when($request->from_date, function ($q) use ($request) {
+                $q->whereDate('created_at', '>=', $request->from_date);
+            })
+            ->when($request->to_date, function ($q) use ($request) {
+                $q->whereDate('created_at', '<=', $request->to_date);
+            })
+            ->when($request->search, function ($q) use ($request) {
+                $q->where(function ($query) use ($request) {
+                    $query->where('activity', 'like', "%{$request->search}%")
+                        ->orWhere('description', 'like', "%{$request->search}%")
+                        ->orWhere('ip_address', 'like', "%{$request->search}%")
+                        ->orWhereHas('user', function ($user) use ($request) {
+                            $user->where('name', 'like', "%{$request->search}%")
+                                ->orWhere('email', 'like', "%{$request->search}%");
+                        });
+                });
+            })
+            ->latest()
+            ->get();
 
-            });
-        })
-        ->latest()
-        ->paginate(10);
+        $filename = 'audit_logs_' . date('Y-m-d_H-i-s') . '.csv';
 
-    return response()->json($logs);
-}
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function () use ($logs) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['ID', 'User', 'Email', 'Role', 'Activity', 'Description', 'Status', 'IP Address', 'User Agent', 'Date & Time']);
+
+            foreach ($logs as $log) {
+                fputcsv($file, [
+                    $log->id,
+                    $log->user->name ?? 'N/A',
+                    $log->user->email ?? 'N/A',
+                    strtoupper($log->role),
+                    $log->activity,
+                    $log->description,
+                    strtoupper($log->status),
+                    $log->ip_address ?? 'N/A',
+                    $log->user_agent ?? 'N/A',
+                    $log->created_at ? $log->created_at->format('Y-m-d H:i:s') : '',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
 
 
 

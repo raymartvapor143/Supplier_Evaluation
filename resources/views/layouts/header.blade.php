@@ -38,7 +38,7 @@
 
 
 
-<script src="{{asset('script/block.js')}}"></script>
+<!-- <script src="{{asset('script/block.js')}}"></script> -->
 
     <script>
       tailwind.config = {

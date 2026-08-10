@@ -148,8 +148,10 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
     Route::post('/admin/threat-scanner/delete-all', [AdminController::class, 'deleteAllThreats']);
 
     Route::get('/admin-dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
-
     Route::get('/admin-dashboard/data', [AdminController::class, 'fetchData']);
+
+    Route::get('/admin/activity-logs', [AdminController::class, 'activityLogs'])->name('admin.activity-logs');
+    Route::get('/admin/activity-logs/export', [AdminController::class, 'exportActivityLogs'])->name('admin.activity-logs.export');
 
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/fetch', [UserController::class, 'fetchUsers']);
