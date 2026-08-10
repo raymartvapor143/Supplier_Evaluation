@@ -269,14 +269,9 @@
     <table class="footer-stamp">
         <tr>
             <td style="width: 50%;">
-                Prepared by:<br>
-                <div class="footer-line"></div><br>
-                <strong>PGSO Administrative Staff</strong>
-            </td>
-            <td style="width: 50%; text-align: right;">
                 Noted by:<br>
                 <div class="footer-line"></div><br>
-                <strong>Provincial General Services Officer</strong>
+                <strong>System Administrator</strong>
             </td>
         </tr>
     </table>
