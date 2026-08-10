@@ -32,6 +32,14 @@
       animation: fadeSlide 0.8s ease-out forwards;
     }
   </style>
+  <script>
+    // Force reload/re-check when navigating back/forward in browser history
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
+            window.location.reload();
+        }
+    });
+  </script>
 </head>
 
 @include('layouts.loading')

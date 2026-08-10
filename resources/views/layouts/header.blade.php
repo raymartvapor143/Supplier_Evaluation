@@ -15,7 +15,7 @@
 <script>
     // Force reload when navigating via back/forward cache
     window.addEventListener('pageshow', function (event) {
-        if (event.persisted) {
+        if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
             window.location.reload();
         }
     });
