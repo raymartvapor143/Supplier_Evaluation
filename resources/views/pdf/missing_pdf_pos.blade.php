@@ -192,15 +192,23 @@
 <body>
 
     <!-- Header Section -->
-    <table class="header-table">
-        <tr>
-            <td class="header-title">
-                <h3>REPUBLIC OF THE PHILIPPINES</h3>
-                <h2>PROVINCIAL GOVERNMENT OF ORIENTAL MINDORO</h2>
-                <h4>PROVINCIAL GENERAL SERVICES OFFICE</h4>
-            </td>
-        </tr>
-    </table>
+<table class="header-table">
+    <tr>
+        <td style="width: 15%; text-align: center;">
+            <img src="{{ public_path('logo.png') }}" style="width: 75px; height: auto;">
+        </td>
+        <td style="width: 70%;" class="header-title">
+            <h3>Republic of the Philippines</h3>
+            <h2>PROVINCE OF DAVAO DEL SUR</h2>
+            <h3>Provincial Government | Matti, City of Digos</h3>
+            <h4>OFFICE OF THE PROVINCIAL PROCUREMENT MANAGEMENT OFFICER</h4>
+        </td>
+        <td style="width: 15%; text-align: right; font-size: 9px; color: #000000;">
+            Date Generated:<br>
+            <strong>{{ \Carbon\Carbon::now()->format('M d, Y') }}</strong>
+        </td>
+    </tr>
+</table>
 
     <div class="doc-title">PURCHASE ORDERS PENDING PDF UPLOAD REPORT</div>
     <div class="filter-subtitle">
