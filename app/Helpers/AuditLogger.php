@@ -25,7 +25,6 @@ class AuditLogger
             $role = $currentUser ? ($currentUser->role ?? 'guest') : 'system/guest';
 
             if (!$userId) {
-                // If user id is not present, we skip logging or record under guest/system
                 $role = $role ?? 'guest';
             }
 

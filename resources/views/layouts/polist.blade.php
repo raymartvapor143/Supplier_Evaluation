@@ -386,6 +386,27 @@ z-50">
             </table>
         </div>
 
+        <!-- FOOTER & PAGINATION -->
+        <div class="px-6 py-4 bg-gray-50 border-t flex flex-wrap items-center justify-between gap-3 shrink-0">
+            <div id="poPagination_v2" class="flex items-center gap-3">
+                <button id="poPrevPage_v2" onclick="changePOPage_v2(-1)"
+                    class="px-4 py-2 rounded-xl border bg-white hover:bg-gray-100 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Previous
+                </button>
+
+                <span id="poPageInfo_v2" class="text-sm font-medium text-gray-600">Page 1 of 1</span>
+
+                <button id="poNextPage_v2" onclick="changePOPage_v2(1)"
+                    class="px-4 py-2 rounded-xl border bg-white hover:bg-gray-100 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
+                    Next
+                </button>
+            </div>
+
+            <div class="text-xs text-gray-500 font-medium" id="poTotalInfo_v2">
+                Showing 0 of 0 entries
+            </div>
+        </div>
+
     </div>
 </div>
 
@@ -551,6 +572,9 @@ z-50">
 function openPOModal_v2() {
     document.getElementById('poListModal_v2').classList.remove('hidden');
     document.getElementById('poListModal_v2').classList.add('flex');
+    if (typeof updatePOPagination_v2 === 'function') {
+        updatePOPagination_v2();
+    }
 }
 
 function closePOModal_v2() {
@@ -795,6 +819,81 @@ function confirmDeletePO(event, form) {
 
 
 // ===============================
+// PAGINATION & SEARCH (15 ITEMS PER PAGE)
+// ===============================
+let poCurrentPage_v2 = 1;
+const poItemsPerPage_v2 = 15;
+
+function updatePOPagination_v2() {
+    const tbody = document.getElementById('poTableBody_v2');
+    if (!tbody) return;
+
+    let input = document.getElementById("poSearchInput_v2");
+    let filter = input ? input.value.toLowerCase().trim() : "";
+
+    let allRows = Array.from(tbody.querySelectorAll('.po-row-v2'));
+    let filteredRows = allRows.filter(row => {
+        return row.textContent.toLowerCase().includes(filter);
+    });
+
+    // Hide all non-matching rows
+    allRows.forEach(row => {
+        if (!filteredRows.includes(row)) {
+            row.style.display = "none";
+        }
+    });
+
+    const totalItems = filteredRows.length;
+    const totalPages = Math.ceil(totalItems / poItemsPerPage_v2) || 1;
+
+    if (poCurrentPage_v2 > totalPages) {
+        poCurrentPage_v2 = totalPages;
+    }
+    if (poCurrentPage_v2 < 1) {
+        poCurrentPage_v2 = 1;
+    }
+
+    const startIndex = (poCurrentPage_v2 - 1) * poItemsPerPage_v2;
+    const endIndex = startIndex + poItemsPerPage_v2;
+
+    filteredRows.forEach((row, index) => {
+        if (index >= startIndex && index < endIndex) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+
+    const pageInfo = document.getElementById('poPageInfo_v2');
+    if (pageInfo) {
+        pageInfo.textContent = `Page ${poCurrentPage_v2} of ${totalPages}`;
+    }
+
+    const totalInfo = document.getElementById('poTotalInfo_v2');
+    if (totalInfo) {
+        const startNum = totalItems === 0 ? 0 : startIndex + 1;
+        const endNum = Math.min(endIndex, totalItems);
+        totalInfo.textContent = `Showing ${startNum}-${endNum} of ${totalItems} entries`;
+    }
+
+    const prevBtn = document.getElementById('poPrevPage_v2');
+    const nextBtn = document.getElementById('poNextPage_v2');
+
+    if (prevBtn) prevBtn.disabled = (poCurrentPage_v2 <= 1);
+    if (nextBtn) nextBtn.disabled = (poCurrentPage_v2 >= totalPages);
+}
+
+function changePOPage_v2(direction) {
+    poCurrentPage_v2 += direction;
+    updatePOPagination_v2();
+}
+
+function searchPO_v2() {
+    poCurrentPage_v2 = 1;
+    updatePOPagination_v2();
+}
+
+// ===============================
 // SORT PO WITH PDF FIRST
 // ===============================
 function sortPOByPDF_v2() {
@@ -824,6 +923,7 @@ function sortPOByPDF_v2() {
         tbody.appendChild(row);
     });
 
+    updatePOPagination_v2();
 }
 
 

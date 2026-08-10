@@ -159,12 +159,12 @@
 
                         <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
                             <h4 class="font-bold text-slate-900 text-sm mb-2 flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 2.2 Supplier & Business Info
+                                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 2.2 Purchase Order & Evaluation Info
                             </h4>
                             <ul class="space-y-1.5 text-slate-600 list-disc list-inside">
-                                <li>Company name & business registration details</li>
-                                <li>Business permits & accreditation files</li>
-                                <li>Authorized representative contact details</li>
+                                <li>Purchase Order (PO) & Purchase Request (PR) numbers</li>
+                                <li>Supplier name, end-user office/department & item details</li>
+                                <li>Evaluation performance ratings (quality, timeliness, compliance)</li>
                             </ul>
                         </div>
 
@@ -240,7 +240,7 @@
                         <h2 class="text-xl font-bold text-slate-900">File Uploads & Documents</h2>
                     </div>
                     <p class="text-slate-600 text-sm leading-relaxed mb-3">
-                        Uploaded business documents, permits, and PDF reports are stored in protected directory structures with restricted role-based file permissions.
+                        Uploaded Purchase Order (PO) PDF files, digital signatures, authorization letters, and evaluation reports are stored in protected directory structures with restricted role-based file permissions.
                     </p>
                 </section>
 
