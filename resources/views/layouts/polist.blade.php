@@ -228,7 +228,7 @@ po-row-v2
 
                     <td class="px-5 py-4 text-gray-700">
                         @if($po->pdf_po)
-                            <a href="{{ route('po.view.pdf', $po->id) }}"
+                            <a href="{{ route('po.view.pdf', $po->encrypted_id) }}"
                                target="_blank"
                                class="text-blue-600 hover:underline">
                                 View PDF
@@ -338,7 +338,7 @@ z-50">
        @json($po->supplier),
        @json($po->end_user),
        @json($po->status),
-       @json($po->pdf_po ? route("po.view.pdf", $po->id) : null),
+       @json($po->pdf_po ? route("po.view.pdf", $po->encrypted_id) : null),
        @json(auth()->user()->role)
    )'
    class="block px-4 py-2 text-sm hover:bg-gray-100">

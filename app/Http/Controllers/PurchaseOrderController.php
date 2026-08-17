@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Support\Facades\Crypt;
 
 class PurchaseOrderController extends Controller
 {
@@ -408,14 +410,19 @@ public function uploadPdf(Request $request, $id)
     }
 }
 
-public function viewPdf($id)
-{
-    $po = PurchaseOrder::findOrFail($id);
+    public function viewPdf($id)
+    {
+        try {
+            $decryptedId = Crypt::decryptString($id);
+            $po = PurchaseOrder::findOrFail($decryptedId);
+        } catch (DecryptException $e) {
+            $po = PurchaseOrder::findOrFail($id);
+        }
 
-    if (!$po->pdf_po || !Storage::disk('local')->exists($po->pdf_po)) {
-        abort(404);
+        if (!$po->pdf_po || !Storage::disk('local')->exists($po->pdf_po)) {
+            abort(404);
+        }
+
+        return response()->file(storage_path('app/' . $po->pdf_po));
     }
-
-    return response()->file(storage_path('app/' . $po->pdf_po));
-}
 }

@@ -326,6 +326,7 @@ public function downloadAuthorizationLetter($id)
     public function changePassword(Request $request)
     {
         try {
+            /** @var \App\Models\User $user */
             $user = auth()->user();
 
             if (!$user) {

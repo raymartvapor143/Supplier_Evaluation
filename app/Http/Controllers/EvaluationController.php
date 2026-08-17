@@ -1310,7 +1310,7 @@ public function evaluationsList(Request $request)
 
         $poPdfUrl = null;
         if ($evaluation->purchaseOrder && $evaluation->purchaseOrder->pdf_po) {
-            $poPdfUrl = route('po.view.pdf', $evaluation->purchaseOrder->id);
+            $poPdfUrl = route('po.view.pdf', $evaluation->purchaseOrder->encrypted_id);
         }
 
         return [
