@@ -415,9 +415,9 @@ function renderAuthorizeUsersTable()
 
 <td class="p-3">
     ${
-        user.authorization_letter
+        user.authorization_letter_url
         ? `
-            <a href="/authorization-letter/${user.id}"
+            <a href="${user.authorization_letter_url}"
                target="_blank"
                class="text-blue-600 hover:underline text-xs font-medium">
                View PDF

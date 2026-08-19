@@ -119,95 +119,130 @@ public function fetchUsers()
     /**
      * Update profile info
      */
-public function update(Request $request, User $user)
-{
-    try {
+    public function update(Request $request, User $user)
+    {
+        try {
+            /** @var \App\Models\User|null $authUser */
+            $authUser = auth()->user();
+            if (!$authUser || ($authUser->id !== $user->id && !$authUser->isAdmin())) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized.'
+                ], 403);
+            }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'designation' => 'required|string|max:255',
-            'email' => 'required|email',
-            'signature' => 'nullable|image|mimes:png,jpg,jpeg|max:4096',
-        ]);
-
-        /*
-        |--------------------------------------------------------------------------
-        | HANDLE SIGNATURE
-        |--------------------------------------------------------------------------
-        */
-
-        if ($request->hasFile('signature')) {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'designation' => 'required|string|max:255',
+                'email' => 'required|email',
+                'signature' => 'nullable|image|mimes:png,jpg,jpeg|max:4096',
+                'authorization_letter' => 'nullable|file|mimes:pdf|max:5120',
+            ]);
 
             /*
             |--------------------------------------------------------------------------
-            | DELETE OLD SIGNATURE
+            | HANDLE SIGNATURE
             |--------------------------------------------------------------------------
             */
 
-            if (
-                $user->signature &&
-                File::exists(
-                    storage_path('app/private/' . $user->signature)
-                )
-            ) {
+            if ($request->hasFile('signature')) {
 
-                File::delete(
-                    storage_path('app/private/' . $user->signature)
+                /*
+                |--------------------------------------------------------------------------
+                | DELETE OLD SIGNATURE
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $user->signature &&
+                    File::exists(
+                        storage_path('app/private/' . $user->signature)
+                    )
+                ) {
+                    File::delete(
+                        storage_path('app/private/' . $user->signature)
+                    );
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | CREATE NEW FILE
+                |--------------------------------------------------------------------------
+                */
+
+                $file = $request->file('signature');
+                $filename = (string) Str::uuid() . '.png';
+
+                $file->move(
+                    storage_path('app/private/signatures'),
+                    $filename
                 );
+
+                $validated['signature'] = 'signatures/' . $filename;
             }
 
             /*
             |--------------------------------------------------------------------------
-            | CREATE NEW FILE
+            | HANDLE AUTHORIZATION LETTER (PDF)
             |--------------------------------------------------------------------------
             */
 
-            $file = $request->file('signature');
+            if ($request->hasFile('authorization_letter')) {
+                $file = $request->file('authorization_letter');
 
-            $filename = (string) Str::uuid() . '.png';
+                $scanner = new \App\Services\FileSecurityScanner();
+                $scanResult = $scanner->scanUploadedFile($file);
+                if (!$scanResult['safe']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Security Threat Blocked: ' . $scanResult['reason']
+                    ], 422);
+                }
+
+                // Delete old authorization letter file if it exists
+                if ($user->authorization_letter) {
+                    if (Storage::disk('private')->exists($user->authorization_letter)) {
+                        Storage::disk('private')->delete($user->authorization_letter);
+                    } elseif (File::exists(storage_path('app/private/' . $user->authorization_letter))) {
+                        File::delete(storage_path('app/private/' . $user->authorization_letter));
+                    }
+                }
+
+                $fileName = Str::uuid() . '.' . strtolower($file->getClientOriginalExtension());
+                $filePath = $file->storeAs('authorization_letters', $fileName, 'private');
+
+                $validated['authorization_letter'] = $filePath;
+            }
 
             /*
             |--------------------------------------------------------------------------
-            | STORE TO:
-            | storage/app/private/signatures
+            | UPDATE USER
             |--------------------------------------------------------------------------
             */
 
-            $file->move(
-                storage_path('app/private/signatures'),
-                $filename
-            );
+            $user->update([
+                'name' => $validated['name'],
+                'designation' => $validated['designation'],
+                'email' => $validated['email'],
+                'signature' => $validated['signature'] ?? $user->signature,
+                'authorization_letter' => $validated['authorization_letter'] ?? $user->authorization_letter,
+            ]);
 
-            /*
-            |--------------------------------------------------------------------------
-            | SAVE DATABASE PATH
-            |--------------------------------------------------------------------------
-            */
+            return response()->json([
+                'success' => true,
+                'signature' => $user->signature,
+                'authorization_letter' => $user->authorization_letter,
+                'authorization_letter_url' => $user->authorization_letter ? route('authorization.letter', $user->authorization_letter_token) : null,
+            ]);
 
-            $validated['signature'] =
-                'signatures/' . $filename;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | UPDATE USER
-        |--------------------------------------------------------------------------
-        */
-
-        $user->update([
-            'name' => $validated['name'],
-            'designation' => $validated['designation'],
-            'email' => $validated['email'],
-            'signature' => $validated['signature']
-                ?? $user->signature,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'signature' => $user->signature,
-        ]);
-
-    } catch (\Throwable $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $firstError = collect($e->errors())->flatten()->first() ?? 'Validation error.';
+            return response()->json([
+                'success' => false,
+                'message' => $firstError,
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Throwable $e) {
 
         Log::error('PROFILE UPDATE ERROR', [
             'message' => $e->getMessage(),
@@ -288,7 +323,7 @@ public function fetchAuthorizationUsers()
         ->map(function ($user) {
 
             $user->authorization_letter_url = $user->authorization_letter
-                ? url("/authorization-letter/{$user->id}")
+                ? route('authorization.letter', $user->authorization_letter_token)
                 : null;
 
             return $user;
@@ -301,9 +336,24 @@ public function fetchAuthorizationUsers()
     ]);
 }
 
-public function downloadAuthorizationLetter($id)
+public function downloadAuthorizationLetter($token)
 {
-    $user = User::findOrFail($id);
+    /** @var \App\Models\User|null $authUser */
+    $authUser = auth()->user();
+    if (!$authUser) {
+        abort(403);
+    }
+
+    $user = User::findByAuthLetterIdentifier((string) $token);
+
+    if (!$user) {
+        abort(404);
+    }
+
+    // Allow user to view their own letter or admins to view any letter
+    if ($authUser->id !== $user->id && !$authUser->isAdmin()) {
+        abort(403);
+    }
 
     if (!$user->authorization_letter) {
         abort(404);
@@ -315,9 +365,12 @@ public function downloadAuthorizationLetter($id)
         abort(404);
     }
 
-    return response()->download(
-        storage_path('app/private/' . $path)
-    );
+    $fullPath = storage_path('app/private/' . $path);
+
+    return response()->file($fullPath, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => 'inline; filename="authorization_letter_' . $user->authorization_letter_token . '.pdf"'
+    ]);
 }
 
     /**

@@ -160,7 +160,6 @@ Route::middleware(['auth', 'role:administrator'])->group(function () {
 
 
     Route::get('/authorization-users/fetch', [UserController::class, 'fetchAuthorizationUsers']);
-    Route::get('/authorization-letter/{id}', [UserController::class, 'downloadAuthorizationLetter']);
     Route::post('/authorization-users/{id}/status', [UserController::class, 'updateStatus']);
 
 
@@ -234,6 +233,9 @@ Route::middleware(['auth', 'role:administrator,end_user,pgso,head,presentative_s
 
     Route::get('/signature/{user}', [UserController::class, 'signature'])
     ->name('signature');
+
+    Route::get('/authorization-letter/{token}', [UserController::class, 'downloadAuthorizationLetter'])
+    ->name('authorization.letter');
 
 
 Route::prefix('bulk-evaluation')

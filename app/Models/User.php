@@ -131,6 +131,42 @@ public function pdfs()
     return $this->hasMany(Pdf::class);
 }
 
+/**
+ * Generate a deterministic secure token for authorization letter URL
+ */
+public function getAuthorizationLetterTokenAttribute(): string
+{
+    // Derive a unique 32-char hex token using app key, user ID, created_at timestamp and file path
+    $raw = $this->id . '|' . $this->created_at . '|' . ($this->authorization_letter ?? '') . '|' . config('app.key');
+    return substr(hash('sha256', $raw), 0, 32);
+}
+
+/**
+ * Find user by ID or by matching authorization letter token
+ */
+public static function findByAuthLetterIdentifier(string $identifier): ?self
+{
+    // If integer ID was passed (fallback for backwards compatibility or direct lookup)
+    if (ctype_digit($identifier)) {
+        $user = self::find($identifier);
+        if ($user) return $user;
+    }
+
+    // Lookup user by matching token
+    $users = self::where('role', 'presentative_staff')
+        ->whereNotNull('authorization_letter')
+        ->get();
+
+    foreach ($users as $user) {
+        if (hash_equals($user->authorization_letter_token, $identifier)) {
+            return $user;
+        }
+    }
+
+    return null;
+}
+
+
 
 
 

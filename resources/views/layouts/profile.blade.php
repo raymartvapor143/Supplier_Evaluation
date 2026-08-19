@@ -146,6 +146,51 @@
                     </div>
                 </div>
 
+                @if(auth()->user()->role === 'presentative_staff')
+                <!-- Authorization Letter PDF (Presentative Staff Only) -->
+                <div id="authorizationLetterContainer" class="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100/80 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                            <i class="ri-file-pdf-2-line text-red-500 text-base"></i>
+                            Authorization Letter
+                        </label>
+                        
+                        <div id="authPdfViewLinkContainer">
+                            @if(auth()->user()->authorization_letter)
+                                <a id="authPdfViewLink"
+                                   href="{{ route('authorization.letter', auth()->user()->authorization_letter_token) }}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-white px-2.5 py-1 rounded-lg border border-indigo-200 shadow-sm transition hover:shadow">
+                                    <i class="ri-external-link-line"></i>
+                                    <span>View PDF in new tab</span>
+                                </a>
+                            @else
+                                <span id="authPdfNoneText" class="text-xs text-gray-400 font-medium">No PDF attached</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- PDF Upload / Change in Edit Mode -->
+                    <div id="authPdfUploadSection" class="hidden pt-1">
+                        <label for="authorization_letter" class="text-xs text-gray-500 block mb-1">
+                            {{ auth()->user()->authorization_letter ? 'Change Authorization PDF (replacing will delete existing file):' : 'Upload Authorization PDF:' }}
+                        </label>
+                        <div class="relative">
+                            <input type="file"
+                                   id="authorization_letter"
+                                   name="authorization_letter"
+                                   accept="application/pdf,.pdf"
+                                   class="block w-full text-xs text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-medium file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 file:cursor-pointer cursor-pointer bg-white rounded-xl border border-gray-200 p-1">
+                        </div>
+                        <p id="selectedPdfName" class="text-xs text-indigo-600 mt-1 hidden flex items-center gap-1">
+                            <i class="ri-check-line"></i>
+                            <span id="selectedPdfText"></span>
+                        </p>
+                    </div>
+                </div>
+                @endif
+
             </div>
         </div>
 
@@ -561,6 +606,11 @@
             }
         });
 
+        const authUploadSection = document.getElementById('authPdfUploadSection');
+        if (authUploadSection) {
+            authUploadSection.classList.remove('hidden');
+        }
+
         if (redrawBtn) redrawBtn.classList.remove('hidden');
         if (editBtn) editBtn.classList.add('hidden');
         if (saveBtn) {
@@ -582,6 +632,19 @@
             }
         });
 
+        const authUploadSection = document.getElementById('authPdfUploadSection');
+        if (authUploadSection) {
+            authUploadSection.classList.add('hidden');
+        }
+        const authFileInput = document.getElementById('authorization_letter');
+        if (authFileInput) {
+            authFileInput.value = '';
+        }
+        const selectedPdfName = document.getElementById('selectedPdfName');
+        if (selectedPdfName) {
+            selectedPdfName.classList.add('hidden');
+        }
+
         if (redrawBtn) redrawBtn.classList.add('hidden');
         if (editBtn) editBtn.classList.remove('hidden');
         if (saveBtn) {
@@ -595,6 +658,28 @@
 
     if (editBtn) editBtn.addEventListener('click', enableEditMode);
     if (cancelBtn) cancelBtn.addEventListener('click', resetEditState);
+
+    const authFileInputEl = document.getElementById('authorization_letter');
+    const selectedPdfNameEl = document.getElementById('selectedPdfName');
+    const selectedPdfTextEl = document.getElementById('selectedPdfText');
+
+    if (authFileInputEl) {
+        authFileInputEl.addEventListener('change', () => {
+            if (authFileInputEl.files && authFileInputEl.files[0]) {
+                const file = authFileInputEl.files[0];
+                if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                    showAlert('warning', 'Invalid File', 'Please select a valid PDF file.');
+                    authFileInputEl.value = '';
+                    if (selectedPdfNameEl) selectedPdfNameEl.classList.add('hidden');
+                    return;
+                }
+                if (selectedPdfTextEl) selectedPdfTextEl.textContent = `Selected: ${file.name} (${Math.round(file.size / 1024)} KB)`;
+                if (selectedPdfNameEl) selectedPdfNameEl.classList.remove('hidden');
+            } else {
+                if (selectedPdfNameEl) selectedPdfNameEl.classList.add('hidden');
+            }
+        });
+    }
 
     /* OUTSIDE CLICK TO CLOSE PROFILE MODAL */
     if (modalProfile) {
@@ -846,6 +931,16 @@
                 formData.append('signature', signatureBlob, 'signature.png');
             }
 
+            const authFileInput = document.getElementById('authorization_letter');
+            if (authFileInput && authFileInput.files && authFileInput.files[0]) {
+                const pdfFile = authFileInput.files[0];
+                if (pdfFile.type !== 'application/pdf' && !pdfFile.name.toLowerCase().endsWith('.pdf')) {
+                    showAlert('warning', 'Invalid File', 'Authorization letter must be a PDF file.');
+                    return;
+                }
+                formData.append('authorization_letter', pdfFile);
+            }
+
             try {
                 const response = await fetch('{{ route("user.update", auth()->user()->id) }}', {
                     method: 'POST',
@@ -862,6 +957,22 @@
                     originalFieldValues['name'] = nameVal;
                     originalFieldValues['designation'] = desigVal;
                     originalFieldValues['email'] = emailVal;
+
+                    if (result.authorization_letter_url) {
+                        const linkContainer = document.getElementById('authPdfViewLinkContainer');
+                        if (linkContainer) {
+                            linkContainer.innerHTML = `
+                                <a id="authPdfViewLink"
+                                   href="${result.authorization_letter_url}"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-white px-2.5 py-1 rounded-lg border border-indigo-200 shadow-sm transition hover:shadow">
+                                    <i class="ri-external-link-line"></i>
+                                    <span>View PDF in new tab</span>
+                                </a>
+                            `;
+                        }
+                    }
 
                     showAlert('success', 'Profile Updated', 'Your profile has been updated successfully.');
                     window.closeProfileModal();
