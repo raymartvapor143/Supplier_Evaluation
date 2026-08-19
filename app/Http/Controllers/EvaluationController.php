@@ -730,37 +730,46 @@ public function showupdate($id)
         }
     }
 
+    // If logged in user is head or representative staff for this office, use them as fallback/active head authority
+    $isRepOrHead = ($user->role === 'head' || $user->role === 'presentative_staff');
+    if (!$headUser && $isRepOrHead) {
+        $headUser = $user;
+        if ($headUser->signature) {
+            $headSignatureUrl = url("/signature/{$headUser->id}");
+        }
+    }
 
     $headApproval = $evaluation->digitalApprovals()
-        ->where('role', 'Head')
+        ->whereIn('role', ['Head', 'head', 'presentative_staff', 'representative_staff'])
         ->latest()
         ->first();
 
 
     $headAuthorization = null;
 
-    if ($office && $headUser) {
+    if ($office && ($headUser || $headApproval || $isRepOrHead)) {
 
         $headAuthorization = [
             'office_id'   => $office->id,
             'office_name' => $office->name,
 
-            'user_id'     => $headUser->id,
+            'user_id'     => $headApproval?->signed_by
+                ?? $headUser?->id
+                ?? $user->id,
 
             'head_name'   => $headApproval?->full_name
-                ?? $headUser->name
-                ?? 'N/A',
+                ?? $headUser?->name
+                ?? $office->head
+                ?? $user->name,
 
             'designation' => $headApproval?->designation
-                ?? $headUser->designation
-                ?? 'Head',
-
+                ?? $headUser?->designation
+                ?? $office->designation
+                ?? ($user->role === 'presentative_staff' ? 'Representative Staff' : 'Head'),
 
             'image' => $headApproval?->image,
 
-
-            'signature_url' => $headSignatureUrl,
-
+            'signature_url' => $headSignatureUrl ?? ($headApproval?->signed_by ? url("/signature/{$headApproval->signed_by}") : null),
 
             'linked' => (bool) $headApproval,
         ];

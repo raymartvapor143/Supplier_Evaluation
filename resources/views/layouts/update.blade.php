@@ -920,7 +920,10 @@ async function updateEvaluation(id) {
             data.head_authorization?.designation?.trim() || 'Not Assigned';
 
         // panel visibility
-        if (data.show_head_panel) {
+        const isHeadOrRepStaff = (currentRole === 'head' || currentRole === 'presentative_staff');
+        const shouldShowHeadPanel = Boolean(data.show_head_panel || isHeadOrRepStaff || data.head_authorization);
+
+        if (shouldShowHeadPanel) {
             headPanel.classList.remove('hidden');
         } else {
             headPanel.classList.add('hidden');
@@ -965,8 +968,10 @@ async function updateEvaluation(id) {
             headStatusIcon.className =
                 'ri-time-line text-white';
 
-            if (data.show_head_panel) {
+            if (shouldShowHeadPanel && isHeadOrRepStaff) {
                 headLinkBtn.classList.remove('hidden');
+            } else {
+                headLinkBtn.classList.add('hidden');
             }
         }
 
