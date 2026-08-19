@@ -235,30 +235,39 @@ use App\Models\User;
         */
 
         $headApproval = $evaluation->digitalApprovals
-            ->firstWhere('role', 'Head');
+            ->first(function ($item) {
+                return in_array(strtolower(trim($item->role ?? '')), ['head', 'office head']);
+            });
 
-/*
-|--------------------------------------------------------------------------
-| REPRESENTATIVE STAFF DIGITAL APPROVAL
-|--------------------------------------------------------------------------
-*/
+        /*
+        |--------------------------------------------------------------------------
+        | REPRESENTATIVE STAFF DIGITAL APPROVAL
+        |--------------------------------------------------------------------------
+        */
 
-$representativeApproval = $evaluation->digitalApprovals
-    ->firstWhere('role', 'presentative_staff'); // Change this if your DB stores a different value
+        $representativeApproval = $evaluation->digitalApprovals
+            ->first(function ($item) {
+                return in_array(strtolower(trim($item->role ?? '')), ['presentative_staff', 'representative_staff', 'representative staff', 'presentative staff']);
+            });
 
-$repSig = null;
+        $repSig = null;
 
-if (
-    $representativeApproval &&
-    $representativeApproval->signer &&
-    $representativeApproval->signer->signature
-) {
-    $path = storage_path('app/private/' . $representativeApproval->signer->signature);
-
-    if (file_exists($path)) {
-        $repSig = $path;
-    }
-}
+        if ($representativeApproval) {
+            if ($representativeApproval->signer && $representativeApproval->signer->signature) {
+                $path = storage_path('app/private/' . $representativeApproval->signer->signature);
+                if (file_exists($path)) {
+                    $repSig = $path;
+                }
+            } elseif ($representativeApproval->signed_by) {
+                $signerUser = User::find($representativeApproval->signed_by);
+                if ($signerUser && $signerUser->signature) {
+                    $path = storage_path('app/private/' . $signerUser->signature);
+                    if (file_exists($path)) {
+                        $repSig = $path;
+                    }
+                }
+            }
+        }
 
         /*
         |--------------------------------------------------------------------------
