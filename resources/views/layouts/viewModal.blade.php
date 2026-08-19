@@ -535,20 +535,38 @@ function getCriteriaName(id) {
 function formatApprovalDate(dateString) {
     if (!dateString) return '-';
 
-    let date;
     if (typeof dateString === 'string') {
         const trimmed = dateString.trim();
+        // If already formatted like "August 19, 2026 10:26 AM"
+        if (/^[A-Za-z]+ \d{1,2}, \d{4} \d{1,2}:\d{2} [AP]M$/i.test(trimmed)) {
+            return trimmed;
+        }
+
+        let date;
         // If string is in format "YYYY-MM-DD HH:mm:ss" without timezone indicator, treat as UTC
         if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/.test(trimmed)) {
             date = new Date(trimmed.replace(' ', 'T') + 'Z');
         } else {
             date = new Date(trimmed);
         }
-    } else {
-        date = new Date(dateString);
+
+        if (!isNaN(date.getTime())) {
+            return date.toLocaleString('en-PH', {
+                timeZone: 'Asia/Manila',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        return trimmed;
     }
 
-    if (isNaN(date.getTime())) return dateString;
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return String(dateString);
 
     return date.toLocaleString('en-PH', {
         timeZone: 'Asia/Manila',

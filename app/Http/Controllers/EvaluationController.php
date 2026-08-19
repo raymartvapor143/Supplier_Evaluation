@@ -448,7 +448,7 @@ public function show($id)
                     ? route('signature', $d->signer->id)
                     : null,
                 'role' => $d->role,
-                'created_at' => $d->created_at,
+                'created_at' => $d->created_at ? \Carbon\Carbon::parse($d->created_at)->timezone('Asia/Manila')->format('F d, Y h:i A') : null,
             ];
         }),
 
@@ -464,7 +464,7 @@ public function show($id)
                 ? route('signature', $representativeUser->id)
                 : null,
             'role' => 'presentative_staff',
-            'signed_at' => optional($representativeApproval)->created_at,
+            'signed_at' => optional($representativeApproval)->created_at ? \Carbon\Carbon::parse($representativeApproval->created_at)->timezone('Asia/Manila')->format('F d, Y h:i A') : null,
         ] : null,
 
 
