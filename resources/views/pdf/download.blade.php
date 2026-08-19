@@ -200,6 +200,7 @@
 
 @php
 use App\Models\User;
+use Carbon\Carbon;
 @endphp
    @php
 
@@ -378,10 +379,10 @@ use App\Models\User;
                     Electronically signed & verified
                 </div>
 
-                @if($preparedBy && $preparedBy->signer && $preparedBy->signer->updated_at)
+                @if($preparedBy && $preparedBy->created_at)
 <div class="sig-note">
     Signed:
-    {{ $preparedBy->created_at->format('F d, Y h:i A') }}
+    {{ Carbon::parse($preparedBy->created_at)->timezone('Asia/Manila')->format('F d, Y h:i A') }}
 </div>
                 @endif
             </td>
@@ -410,10 +411,10 @@ use App\Models\User;
                 <div class="sig-note">
                     {{ $headNote }}
                 </div>
-@if($headApproval && $headApproval->signer && $headApproval->signer->updated_at)
+@if($headApproval && $headApproval->created_at)
 <div class="sig-note">
     Signed:
-    {{ optional($headApproval->created_at)->format('F d, Y h:i A') }}
+    {{ Carbon::parse($headApproval->created_at)->timezone('Asia/Manila')->format('F d, Y h:i A') }}
 </div>
  @endif
 
@@ -451,7 +452,7 @@ use App\Models\User;
     @if($representativeApproval->created_at)
         <div class="sig-note">
             Signed:
-            {{ $representativeApproval->created_at->format('F d, Y h:i A') }}
+            {{ Carbon::parse($representativeApproval->created_at)->timezone('Asia/Manila')->format('F d, Y h:i A') }}
         </div>
     @endif
 
