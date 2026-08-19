@@ -140,7 +140,7 @@
                         </label>
                         <input type="text"
                                id="role"
-                               value="{{ auth()->user()->role }}"
+                               value="{{ auth()->user()->role_display_name }}"
                                disabled
                                class="profile-input capitalize bg-gray-100 text-gray-500 cursor-not-allowed">
                     </div>

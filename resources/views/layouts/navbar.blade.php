@@ -176,7 +176,7 @@
 
             <!-- Hide username on small devices -->
             <span class="hidden md:block text-sm font-medium capitalize">
-              {{ auth()->user()->role }}
+              {{ auth()->user()->role_display_name }}
             </span>
 
             <i class="ri-arrow-down-s-line text-lg"></i>

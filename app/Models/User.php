@@ -101,6 +101,21 @@ class User extends Authenticatable implements CanResetPasswordContract
         return $this->role === 'end_user';
     }
 
+    /**
+     * Get human-readable alias / label for role
+     */
+    public function getRoleDisplayNameAttribute(): string
+    {
+        return match($this->role) {
+            'presentative_staff' => 'Representative Staff',
+            'end_user' => 'End User',
+            'administrator' => 'Administrator',
+            'head' => 'Head',
+            'pgso' => 'PGSO',
+            default => ucwords(str_replace('_', ' ', $this->role ?? 'N/A')),
+        };
+    }
+
 
     public function office()
 {
