@@ -386,7 +386,7 @@ public function show($id)
             'image' => $headApproval->signer
                 ? route('signature', $headApproval->signer->id)
                 : null,
-            'created_at' => $headApproval->created_at,
+            'created_at' => $headApproval->created_at ? \Carbon\Carbon::parse($headApproval->created_at)->timezone('Asia/Manila')->format('F d, Y h:i A') : null,
             'source' => 'approval',
         ];
 

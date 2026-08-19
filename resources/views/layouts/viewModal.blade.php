@@ -609,12 +609,16 @@ async function viewEvaluation(id) {
         // ===============================
         // ROLE MATCHING
         // ===============================
-        const preparedBy = approvals.find(a => a.role === 'Prepared by');
+        const getCleanRole = r => String(r || '').toLowerCase().trim();
 
-        const headApproval = approvals.find(a => a.role === 'Head');
+        const preparedBy = approvals.find(a => getCleanRole(a.role) === 'prepared by');
+
+        const headApproval = approvals.find(a =>
+            ['head', 'office head'].includes(getCleanRole(a.role))
+        );
 
         const representative = approvals.find(a =>
-            a.role === 'presentative_staff' || a.role === 'representative_staff'
+            ['presentative_staff', 'representative_staff', 'representative staff', 'presentative staff'].includes(getCleanRole(a.role))
         ) || data.representative_staff;
 
         const headFallback = data.head_info || {};
