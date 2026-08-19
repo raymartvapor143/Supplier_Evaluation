@@ -201,6 +201,25 @@
 @php
 use App\Models\User;
 use Carbon\Carbon;
+
+if (!function_exists('formatAseanDate')) {
+    function formatAseanDate($date) {
+        if (!$date) return '-';
+        
+        // If it's a Carbon/DateTime instance or raw string
+        $raw = is_string($date) ? $date : (method_exists($date, 'format') ? $date->format('Y-m-d H:i:s') : (string)$date);
+        
+        // If the date in DB was saved in UTC (e.g. 02:xx AM for 10:xx AM local)
+        // or stored with timezone, parse as UTC and convert to Asia/Manila (+8)
+        try {
+            return Carbon::createFromFormat('Y-m-d H:i:s', $raw, 'UTC')
+                ->setTimezone('Asia/Manila')
+                ->format('F d, Y h:i A');
+        } catch (\Exception $e) {
+            return Carbon::parse($date)->timezone('Asia/Manila')->format('F d, Y h:i A');
+        }
+    }
+}
 @endphp
    @php
 
@@ -382,7 +401,7 @@ use Carbon\Carbon;
                 @if($preparedBy && $preparedBy->created_at)
 <div class="sig-note">
     Signed:
-    {{ Carbon::parse($preparedBy->created_at)->timezone('Asia/Manila')->format('F d, Y h:i A') }}
+    {{ formatAseanDate($preparedBy->created_at) }}
 </div>
                 @endif
             </td>
@@ -414,7 +433,7 @@ use Carbon\Carbon;
 @if($headApproval && $headApproval->created_at)
 <div class="sig-note">
     Signed:
-    {{ Carbon::parse($headApproval->created_at)->timezone('Asia/Manila')->format('F d, Y h:i A') }}
+    {{ formatAseanDate($headApproval->created_at) }}
 </div>
  @endif
 
@@ -452,7 +471,7 @@ use Carbon\Carbon;
     @if($representativeApproval->created_at)
         <div class="sig-note">
             Signed:
-            {{ Carbon::parse($representativeApproval->created_at)->timezone('Asia/Manila')->format('F d, Y h:i A') }}
+            {{ formatAseanDate($representativeApproval->created_at) }}
         </div>
     @endif
 
