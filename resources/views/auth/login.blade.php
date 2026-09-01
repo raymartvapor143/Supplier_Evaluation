@@ -234,7 +234,7 @@ let lockTimer;
 function startLock(seconds) {
 
     const emailInput = document.querySelector('input[type="email"]');
-    const passwordInput = document.querySelector('input[type="password"]');
+    const passwordInput = document.getElementById('loginPassword');
     const loginBtn = document.getElementById('loginBtn');
 
     emailInput.disabled = true;
@@ -296,7 +296,7 @@ if (savedEmail) {
         e.preventDefault();
 
         const email = loginForm.querySelector('input[type="email"]').value.trim();
-        const password = loginForm.querySelector('input[type="password"]').value.trim();
+        const password = document.getElementById('loginPassword').value.trim();
 
         localStorage.setItem('login_email', email);
 
@@ -2240,7 +2240,7 @@ document.addEventListener('DOMContentLoaded', function () {
 document.addEventListener('DOMContentLoaded', async () => {
 
     const emailInput = document.querySelector('input[type="email"]');
-    const passwordInput = document.querySelector('input[type="password"]');
+    const passwordInput = document.getElementById('loginPassword');
     const loginBtn = document.getElementById('loginBtn');
 
     let timerInterval = null;
