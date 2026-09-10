@@ -1249,11 +1249,11 @@ public function evaluationsList(Request $request)
     $status = strtolower($request->query('status', 'pending'));
 
     $query = Evaluation::with([
-        'digitalApprovals',
-        'criteriaScores',
-        'requests',
-        'purchaseOrder',
-        'office'
+        'digitalApprovals:id,evaluation_id,role,full_name',
+        'criteriaScores:id,evaluation_id,criteria_id,number_rating',
+        'requests:id,evaluation_id,status,created_at',
+        'purchaseOrder:id,po_no,pdf_po,end_user',
+        'office:id,name'
     ])
     ->where('status', $status)
     ->where(function ($q) {
@@ -1261,8 +1261,8 @@ public function evaluationsList(Request $request)
           ->orWhereNull('delete_status');
     });
 
-
     if (!$user->isAdmin() && $user->role !== 'pgso') {
+
         $query->where('office_id', $user->office_id);
     }
 

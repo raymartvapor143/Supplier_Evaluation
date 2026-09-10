@@ -121,9 +121,8 @@ public function dashboard(Request $request)
 {
     $users = User::whereIn('role', ['administrator', 'pgso'])->get();
 
-    $pos = PurchaseOrder::orderByRaw('CASE WHEN pdf_po IS NULL OR pdf_po = "" THEN 0 ELSE 1 END')
-        ->latest()
-        ->get();
+    // Do not load all PO models into memory on page load. PO list is loaded via AJAX pagination.
+    $pos = collect();
 
 
     $endUsers = PurchaseOrder::select('end_user')

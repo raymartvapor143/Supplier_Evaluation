@@ -89,25 +89,35 @@
 
 </div>
 
-<div class="px-6 py-4 bg-gray-50 border-b">
-
-<input type="text"
-    id="poSearchInput_v2"
-    onkeyup="searchPO_v2()"
-    placeholder="Search PO number, PR number, office, supplier..."
-    class="
-    w-full
-    rounded-2xl
-    border-gray-200
-    bg-white
-    px-5 py-3
-    shadow-sm
-    focus:ring-2
-    focus:ring-orange-400
-    focus:border-orange-400
-    outline-none
-    transition">
-
+<div class="px-6 py-4 bg-gray-50 border-b flex flex-col sm:flex-row gap-3 items-center">
+    <div class="relative flex-1 w-full">
+        <input type="text"
+            id="poSearchInput_v2"
+            placeholder="Search PO number, PR number, office, supplier..."
+            class="
+            w-full
+            rounded-2xl
+            border-gray-200
+            bg-white
+            pl-11 pr-5 py-3
+            shadow-sm
+            focus:ring-2
+            focus:ring-orange-400
+            focus:border-orange-400
+            outline-none
+            transition text-sm">
+        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <i class="ri-search-line text-lg"></i>
+        </div>
+    </div>
+    <div class="flex items-center gap-2 w-full sm:w-auto">
+        <select id="poPdfFilter_v2" onchange="searchPO_v2()"
+            class="rounded-2xl border-gray-200 bg-white px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-orange-400 outline-none text-gray-700">
+            <option value="">All POs</option>
+            <option value="no_pdf_first">No PDF First</option>
+            <option value="has_pdf_first">Has PDF First</option>
+        </select>
+    </div>
 </div>
 
 
@@ -212,176 +222,15 @@ sticky top-0 z-20">
                 </thead>
 
 <tbody id="poTableBody_v2">
-@foreach($pos as $po)
-<tr class="
-border-b
-hover:bg-orange-50/50
-transition
-duration-200
-po-row-v2
-{{ $po->pdf_po ? 'has-pdf bg-green-50/30' : 'no-pdf' }}">
-
-                    <td class="px-5 py-4 text-gray-700">{{ $po->po_no }}</td>
-                    <td class="px-5 py-4 text-gray-700">{{ $po->pr_no ?? 'N/A' }}</td>
-                    <td class="px-5 py-4 text-gray-700">{{ $po->end_user }}</td>
-                    <td class="px-5 py-4 text-gray-700">{{ $po->supplier }}</td>
-
-                    <td class="px-5 py-4 text-gray-700">
-                        @if($po->pdf_po)
-                            <a href="{{ route('po.view.pdf', $po->encrypted_id) }}"
-                               target="_blank"
-                               class="text-blue-600 hover:underline">
-                                View PDF
-                            </a>
-                        @else
-                            <span class="text-gray-400">No PDF</span>
-                        @endif
-                    </td>
-
-                    <td class="px-5 py-4 text-gray-700">
-                        @php
-                            $status = $po->status ?? 'Pending';
-                        @endphp
-
-<span class="
-inline-flex items-center
-px-3 py-1
-rounded-full
-text-xs
-font-semibold
-
-@if($status == 'Added')
-bg-blue-100 text-blue-700
-
-@elseif($status == 'Approved')
-bg-green-100 text-green-700
-
-@elseif($status == 'Cancelled')
-bg-red-100 text-red-700
-
-@else
-bg-yellow-100 text-yellow-700
-
-@endif
-">
-
-{{ $status }}
-
-</span>
-                    </td>
-
-                <td class="p-3 border relative">
-
-                    @php
-                        $status = $po->status ?? 'Pending';
-                        $isAdmin = auth()->user()->role === 'administrator';
-                    @endphp
-
-                    {{-- 🚫 NON-ADMIN: HIDE ACTION IF ADDED --}}
-                    @if(in_array($status, ['Added', 'Cancelled']) && !$isAdmin)
-
-                        <span class="text-xs text-gray-400 italic">Locked</span>
-
-                    @else
-
-                        <div class="po-action-wrapper-v2 relative inline-block text-left">
-
-<button onclick="togglePOAction_v2(this)"
-class="
-px-4 py-2
-rounded-xl
-bg-gray-100
-hover:bg-orange-100
-text-gray-700
-text-sm
-font-medium
-transition">
-
-⋮ Actions
-
-</button>
-
-                            <div class="
-po-action-menu-v2
-hidden
-absolute
-right-0
-mt-2
-w-48
-bg-white
-rounded-2xl
-shadow-xl
-border
-border-gray-100
-overflow-hidden
-z-50">
-
-                                {{-- 🚫 EVALUATE RULE --}}
-                                @if($status !== 'Added' && $status !== 'Cancelled')
-                                    <a href="#"
-                                       onclick='openPOEvaluateModal_v2(
-                                           @json($po->id),
-                                           @json($po->po_no),
-                                           @json($po->supplier),
-                                           @json($po->end_user)
-                                       )'
-                                       class="block px-4 py-2 text-sm hover:bg-gray-100">
-                                        Add Evaluation
-                                    </a>
-                                @endif
-
-<a href="#"
-   onclick='openPOEditModal_v2(
-       @json($po->id),
-       @json($po->po_no),
-       @json($po->pr_no),
-       @json($po->supplier),
-       @json($po->end_user),
-       @json($po->status),
-       @json($po->pdf_po ? route("po.view.pdf", $po->encrypted_id) : null),
-       @json(auth()->user()->role)
-   )'
-   class="block px-4 py-2 text-sm hover:bg-gray-100">
-    View
-</a>
-
-                                {{-- ADMIN ONLY ACTIONS --}}
-                                @if($isAdmin)
-
-
-
-                                    <a href="#"
-                                       onclick="openUploadPOModal({{ $po->id }}, {{ $po->pdf_po ? 'true' : 'false' }})"
-                                       class="block px-4 py-2 text-sm hover:bg-gray-100">
-                                        {{ $po->pdf_po ? 'Change PDF' : 'Upload PDF' }}
-                                    </a>
-
-                                    <form action="{{ route('po.delete', $po->id) }}" method="POST"
-                                          onsubmit="confirmDeletePO(event, this)">
-
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button type="submit"
-                                            class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                            Delete
-                                        </button>
-
-                                    </form>
-
-                                @endif
-
-                            </div>
-
-                        </div>
-
-                    @endif
-
-                </td>
-
-                </tr>
-                @endforeach
-                </tbody>
+    <tr>
+        <td colspan="7" class="py-12 text-center text-gray-400">
+            <div class="flex flex-col items-center justify-center space-y-2">
+                <i class="ri-loader-4-line text-3xl animate-spin text-orange-500"></i>
+                <span class="text-xs font-semibold text-gray-500">Loading purchase orders...</span>
+            </div>
+        </td>
+    </tr>
+</tbody>
 
             </table>
         </div>
@@ -567,110 +416,231 @@ z-50">
 <script>
 
 // ===============================
-// PAGINATION & SEARCH (15 ITEMS PER PAGE)
+// AJAX SERVER-SIDE PAGINATION & SEARCH
 // ===============================
 var poCurrentPage_v2 = 1;
 var poItemsPerPage_v2 = 15;
+var poTotalPages_v2 = 1;
+var poIsLoading_v2 = false;
+var poSearchDebounce_v2 = null;
+var currentUserRole_v2 = @json(auth()->user()->role);
 
-function updatePOPagination_v2() {
+async function loadPOPage_v2(page = 1) {
+    poCurrentPage_v2 = page;
     const tbody = document.getElementById('poTableBody_v2');
     if (!tbody) return;
 
-    let input = document.getElementById("poSearchInput_v2");
-    let filter = input ? input.value.toLowerCase().trim() : "";
+    const searchInput = document.getElementById('poSearchInput_v2');
+    const searchVal = searchInput ? searchInput.value.trim() : '';
+    const pdfFilter = document.getElementById('poPdfFilter_v2') ? document.getElementById('poPdfFilter_v2').value : '';
 
-    let allRows = Array.from(tbody.querySelectorAll('.po-row-v2'));
-    let filteredRows = allRows.filter(row => {
-        return row.textContent.toLowerCase().includes(filter);
-    });
+    poIsLoading_v2 = true;
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="7" class="py-10 text-center text-gray-400">
+                <div class="flex flex-col items-center justify-center space-y-2">
+                    <i class="ri-loader-4-line text-2xl animate-spin text-orange-500"></i>
+                    <span class="text-xs font-semibold text-gray-500">Loading purchase orders...</span>
+                </div>
+            </td>
+        </tr>
+    `;
 
-    // Hide all non-matching rows
-    allRows.forEach(row => {
-        if (!filteredRows.includes(row)) {
-            row.style.display = "none";
-        }
-    });
+    try {
+        const params = new URLSearchParams({
+            page: poCurrentPage_v2,
+            per_page: poItemsPerPage_v2,
+            search: searchVal,
+            sort_pdf: pdfFilter
+        });
 
-    const totalItems = filteredRows.length;
-    const totalPages = Math.ceil(totalItems / poItemsPerPage_v2) || 1;
+        const res = await fetch('/purchase-orders/list-paginated?' + params.toString(), {
+            headers: { 'Accept': 'application/json' }
+        });
 
-    if (poCurrentPage_v2 > totalPages) {
-        poCurrentPage_v2 = totalPages;
+        if (!res.ok) throw new Error('Failed to load purchase orders');
+
+        const json = await res.json();
+        const data = json.data || [];
+        poTotalPages_v2 = json.last_page || 1;
+        const totalItems = json.total || 0;
+
+        renderPOTable_v2(data);
+        updatePOPaginationControls_v2(json.current_page, poTotalPages_v2, totalItems);
+
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="py-8 text-center text-red-500 text-xs font-medium">
+                    Failed to load purchase orders. Please try again.
+                </td>
+            </tr>
+        `;
+    } finally {
+        poIsLoading_v2 = false;
     }
-    if (poCurrentPage_v2 < 1) {
-        poCurrentPage_v2 = 1;
+}
+
+function renderPOTable_v2(items) {
+    const tbody = document.getElementById('poTableBody_v2');
+    if (!tbody) return;
+
+    if (!items || items.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="py-12 text-center text-gray-400">
+                    <div class="flex flex-col items-center justify-center space-y-2">
+                        <i class="ri-inbox-line text-3xl text-gray-300"></i>
+                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">No Purchase Orders found</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+        return;
     }
 
-    const startIndex = (poCurrentPage_v2 - 1) * poItemsPerPage_v2;
-    const endIndex = startIndex + poItemsPerPage_v2;
+    const isAdmin = (currentUserRole_v2 === 'administrator');
 
-    filteredRows.forEach((row, index) => {
-        if (index >= startIndex && index < endIndex) {
-            row.style.display = "";
+    let html = '';
+    items.forEach(po => {
+        const status = po.status || 'Pending';
+        let statusBadge = '';
+        if (status === 'Added') {
+            statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">Added</span>';
+        } else if (status === 'Approved') {
+            statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Approved</span>';
+        } else if (status === 'Cancelled') {
+            statusBadge = '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Cancelled</span>';
         } else {
-            row.style.display = "none";
+            statusBadge = `<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">${status}</span>`;
         }
+
+        const pdfCell = po.has_pdf && po.pdf_url ? `
+            <a href="${po.pdf_url}" target="_blank" class="text-blue-600 hover:underline inline-flex items-center gap-1">
+                <i class="ri-file-pdf-line"></i> View PDF
+            </a>
+        ` : '<span class="text-gray-400">No PDF</span>';
+
+        let actionCell = '';
+        if (['Added', 'Cancelled'].includes(status) && !isAdmin) {
+            actionCell = '<span class="text-xs text-gray-400 italic">Locked</span>';
+        } else {
+            let menuItems = '';
+            if (status !== 'Added' && status !== 'Cancelled') {
+                menuItems += `
+                    <a href="#" onclick="openPOEvaluateModal_v2(${po.id}, '${escapeHtml(po.po_no)}', '${escapeHtml(po.supplier || '')}', '${escapeHtml(po.end_user || '')}'); return false;"
+                       class="block px-4 py-2 text-sm hover:bg-gray-100">
+                        Add Evaluation
+                    </a>
+                `;
+            }
+
+            menuItems += `
+                <a href="#" onclick="openPOEditModal_v2(${po.id}, '${escapeHtml(po.po_no)}', '${escapeHtml(po.pr_no || '')}', '${escapeHtml(po.supplier || '')}', '${escapeHtml(po.end_user || '')}', '${escapeHtml(po.status)}', ${po.pdf_url ? `'${po.pdf_url}'` : 'null'}, '${currentUserRole_v2}'); return false;"
+                   class="block px-4 py-2 text-sm hover:bg-gray-100">
+                    View
+                </a>
+            `;
+
+            if (isAdmin) {
+                menuItems += `
+                    <a href="#" onclick="openUploadPOModal(${po.id}, ${po.has_pdf}); return false;"
+                       class="block px-4 py-2 text-sm hover:bg-gray-100">
+                        ${po.has_pdf ? 'Change PDF' : 'Upload PDF'}
+                    </a>
+                    <form action="/purchase-orders/${po.id}" method="POST" onsubmit="confirmDeletePO(event, this)">
+                        <input type="hidden" name="_token" value="${document.querySelector('meta[name="csrf-token"]')?.content || ''}">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                            Delete
+                        </button>
+                    </form>
+                `;
+            }
+
+            actionCell = `
+                <div class="po-action-wrapper-v2 relative inline-block text-left">
+                    <button onclick="togglePOAction_v2(this)"
+                        class="px-4 py-2 rounded-xl bg-gray-100 hover:bg-orange-100 text-gray-700 text-sm font-medium transition">
+                        ⋮ Actions
+                    </button>
+                    <div class="po-action-menu-v2 hidden absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-50">
+                        ${menuItems}
+                    </div>
+                </div>
+            `;
+        }
+
+        const rowBg = po.has_pdf ? 'has-pdf bg-green-50/30' : 'no-pdf';
+
+        html += `
+            <tr class="border-b hover:bg-orange-50/50 transition duration-200 po-row-v2 ${rowBg}">
+                <td class="px-5 py-4 text-gray-700 font-semibold text-xs">${escapeHtml(po.po_no)}</td>
+                <td class="px-5 py-4 text-gray-700 text-xs">${escapeHtml(po.pr_no || 'N/A')}</td>
+                <td class="px-5 py-4 text-gray-700 text-xs">${escapeHtml(po.end_user || '')}</td>
+                <td class="px-5 py-4 text-gray-700 text-xs">${escapeHtml(po.supplier || '')}</td>
+                <td class="px-5 py-4 text-gray-700 text-xs">${pdfCell}</td>
+                <td class="px-5 py-4 text-gray-700">${statusBadge}</td>
+                <td class="p-3 border relative">${actionCell}</td>
+            </tr>
+        `;
     });
 
+    tbody.innerHTML = html;
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function updatePOPaginationControls_v2(currentPage, totalPages, totalItems) {
     const pageInfo = document.getElementById('poPageInfo_v2');
     if (pageInfo) {
-        pageInfo.textContent = `Page ${poCurrentPage_v2} of ${totalPages}`;
+        pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
     }
 
     const totalInfo = document.getElementById('poTotalInfo_v2');
     if (totalInfo) {
+        const startIndex = (currentPage - 1) * poItemsPerPage_v2;
         const startNum = totalItems === 0 ? 0 : startIndex + 1;
-        const endNum = Math.min(endIndex, totalItems);
+        const endNum = Math.min(startIndex + poItemsPerPage_v2, totalItems);
         totalInfo.textContent = `Showing ${startNum}-${endNum} of ${totalItems} entries`;
     }
 
     const prevBtn = document.getElementById('poPrevPage_v2');
     const nextBtn = document.getElementById('poNextPage_v2');
 
-    if (prevBtn) prevBtn.disabled = (poCurrentPage_v2 <= 1);
-    if (nextBtn) nextBtn.disabled = (poCurrentPage_v2 >= totalPages);
+    if (prevBtn) prevBtn.disabled = (currentPage <= 1);
+    if (nextBtn) nextBtn.disabled = (currentPage >= totalPages);
 }
 
 function changePOPage_v2(direction) {
-    poCurrentPage_v2 += direction;
-    updatePOPagination_v2();
+    const targetPage = poCurrentPage_v2 + direction;
+    if (targetPage < 1 || targetPage > poTotalPages_v2 || poIsLoading_v2) return;
+    loadPOPage_v2(targetPage);
 }
 
 function searchPO_v2() {
-    poCurrentPage_v2 = 1;
-    updatePOPagination_v2();
+    clearTimeout(poSearchDebounce_v2);
+    poSearchDebounce_v2 = setTimeout(() => {
+        loadPOPage_v2(1);
+    }, 250);
 }
 
-// ===============================
-// SORT PO WITH PDF FIRST
-// ===============================
-function sortPOByPDF_v2() {
-
-    const tbody = document.getElementById('poTableBody_v2');
-
-    if (!tbody) return;
-
-    let rows = Array.from(
-        tbody.querySelectorAll('.po-row-v2')
-    );
-
-    rows.sort((a, b) => {
-        let aHasPDF = a.classList.contains('has-pdf');
-        let bHasPDF = b.classList.contains('has-pdf');
-
-        // Not yet uploaded PDF rows first
-        if (!aHasPDF && bHasPDF) return -1;
-        if (aHasPDF && !bHasPDF) return 1;
-
-        return 0;
-    });
-
-    rows.forEach(row => {
-        tbody.appendChild(row);
-    });
-
-    updatePOPagination_v2();
-}
+// Attach input listener to search input
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('poSearchInput_v2');
+    if (searchInput) {
+        searchInput.addEventListener('input', searchPO_v2);
+    }
+});
 
 // ===============================
 // MODAL CONTROL
@@ -678,7 +648,7 @@ function sortPOByPDF_v2() {
 function openPOModal_v2() {
     document.getElementById('poListModal_v2').classList.remove('hidden');
     document.getElementById('poListModal_v2').classList.add('flex');
-    sortPOByPDF_v2();
+    loadPOPage_v2(1);
 }
 
 function closePOModal_v2() {
@@ -801,8 +771,6 @@ const POToast = Swal.mixin({
 });
 
 document.addEventListener('DOMContentLoaded', function () {
-    sortPOByPDF_v2();
-
     @if(session('po_deleted'))
     POToast.fire({
         icon: 'success',
@@ -883,12 +851,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     openPOModal_v2();
     @endif
-});
-
-window.addEventListener('pageshow', function () {
-    if (typeof sortPOByPDF_v2 === 'function') {
-        sortPOByPDF_v2();
-    }
 });
 
 </script>

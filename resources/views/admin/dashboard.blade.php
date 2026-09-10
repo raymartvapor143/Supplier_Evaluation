@@ -109,28 +109,9 @@
         const tabBtns = document.querySelectorAll('.tab-btn[data-tab]');
         const tabContents = document.querySelectorAll('.tab-content');
 
-        function animateTableRows(targetContent) {
-          const rows = targetContent.querySelectorAll('.table-row');
-          rows.forEach((row, index) => {
-            row.classList.add('opacity-0', 'transform', 'translate-y-4');
-            setTimeout(() => {
-              row.classList.remove('opacity-0', 'translate-y-4');
-              row.classList.add('opacity-100', 'translate-y-0');
-            }, index * 100);
-          });
-        }
-
-        function resetTableRows() {
-          const allRows = document.querySelectorAll('.table-row');
-          allRows.forEach(row => {
-            row.classList.remove('opacity-100', 'translate-y-0');
-            row.classList.add('opacity-0', 'translate-y-4');
-          });
-        }
         tabBtns.forEach(btn => {
           btn.addEventListener('click', function() {
             const targetTab = this.getAttribute('data-tab');
-            resetTableRows();
             tabBtns.forEach(b => {
               b.classList.remove('active', 'border-primary', 'text-primary');
               b.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
@@ -143,20 +124,11 @@
             const targetContent = document.getElementById(targetTab + 'Table');
             if (targetContent) {
               targetContent.classList.remove('hidden');
-            //   setTimeout(() => {
-            //     animateTableRows(targetContent);
-            //   }, 50);
             }
           });
         });
         tabBtns[0].classList.add('active', 'border-primary', 'text-primary');
         tabBtns[0].classList.remove('border-transparent', 'text-gray-500');
-        // setTimeout(() => {
-        //   const initialContent = document.getElementById('pendingTable');
-        //   if (initialContent) {
-        //     animateTableRows(initialContent);
-        //   }
-        // }, 100);
       });
     </script>
 

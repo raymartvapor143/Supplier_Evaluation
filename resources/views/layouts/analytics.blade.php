@@ -607,7 +607,12 @@ function renderPagination(totalItems) {
     });
 
     /* ================= INIT ================= */
-    fetchEvaluations({ force: true });
+    // Defer fetchEvaluations until Analytics view is actually opened to prevent initial page lag
+    window.loadAnalyticsOnDemand = function() {
+        if (allEvaluations.length === 0) {
+            fetchEvaluations({ force: true });
+        }
+    };
 
     document.getElementById('report-department')?.addEventListener('change', () => {
     currentPage = 1;
@@ -791,6 +796,10 @@ const backSide = flipInner.querySelector('.back');
 toggleAnalytics.addEventListener('click', () => {
   backSide.classList.remove('hidden');
   flipInner.style.transform = 'rotateY(180deg)';
+
+  if (typeof window.loadAnalyticsOnDemand === 'function') {
+    window.loadAnalyticsOnDemand();
+  }
 
   // Delay ensures DOM is ready before charts render
   setTimeout(() => {

@@ -196,7 +196,11 @@ Route::post('/purchase-orders/store', [PurchaseOrderController::class, 'store'])
 Route::delete('/purchase-orders/{id}', [PurchaseOrderController::class, 'destroy'])
     ->name('po.delete');
 
+Route::get('/purchase-orders/list-paginated', [PurchaseOrderController::class, 'listPaginated'])
+    ->name('po.list.paginated');
+
 Route::put('/purchase-orders/{id}', [PurchaseOrderController::class, 'update']);
+
 
 Route::get('/offices/list', [OfficeController::class, 'list']);
 Route::post('/offices/store', [OfficeController::class, 'store']);

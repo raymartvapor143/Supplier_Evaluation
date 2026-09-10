@@ -425,4 +425,57 @@ public function uploadPdf(Request $request, $id)
 
         return response()->file(storage_path('app/' . $po->pdf_po));
     }
+
+    public function listPaginated(Request $request)
+    {
+        $perPage = (int) $request->input('per_page', 15);
+        if ($perPage <= 0 || $perPage > 100) {
+            $perPage = 15;
+        }
+
+        $query = PurchaseOrder::query();
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('po_no', 'like', "%{$search}%")
+                  ->orWhere('pr_no', 'like', "%{$search}%")
+                  ->orWhere('end_user', 'like', "%{$search}%")
+                  ->orWhere('supplier', 'like', "%{$search}%")
+                  ->orWhere('status', 'like', "%{$search}%");
+            });
+        }
+
+        // Sort by PDF presence if requested
+        if ($request->input('sort_pdf') === 'no_pdf_first') {
+            $query->orderByRaw('CASE WHEN pdf_po IS NULL OR pdf_po = "" THEN 0 ELSE 1 END');
+        } elseif ($request->input('sort_pdf') === 'has_pdf_first') {
+            $query->orderByRaw('CASE WHEN pdf_po IS NOT NULL AND pdf_po != "" THEN 0 ELSE 1 END');
+        }
+
+        $paginator = $query->latest()->paginate($perPage);
+
+        $items = collect($paginator->items())->map(function ($po) {
+            return [
+                'id'           => $po->id,
+                'po_no'        => $po->po_no,
+                'pr_no'        => $po->pr_no,
+                'end_user'     => $po->end_user,
+                'supplier'     => $po->supplier,
+                'status'       => $po->status ?? 'Pending',
+                'has_pdf'      => !empty($po->pdf_po),
+                'pdf_url'      => !empty($po->pdf_po) ? route('po.view.pdf', $po->encrypted_id) : null,
+            ];
+        });
+
+        return response()->json([
+            'data'         => $items,
+            'current_page' => $paginator->currentPage(),
+            'last_page'    => $paginator->lastPage(),
+            'total'        => $paginator->total(),
+            'per_page'     => $paginator->perPage(),
+        ]);
+    }
 }
+
