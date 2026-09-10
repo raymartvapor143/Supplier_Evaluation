@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Evaluation;
 use App\Models\Office;
 use App\Models\PurchaseOrder;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -20,94 +21,93 @@ use Illuminate\Support\Facades\Crypt;
 class PurchaseOrderController extends Controller
 {
 
-// public function index()
-// {
-//     $user = Auth::user();
+    // public function index()
+    // {
+    //     $user = Auth::user();
 
-//     $pos = PurchaseOrder::with('evaluation')
-//         ->where('end_user', $user->office->abbreviation)
-//         ->latest()
-//         ->get();
+    //     $pos = PurchaseOrder::with('evaluation')
+    //         ->where('end_user', $user->office->abbreviation)
+    //         ->latest()
+    //         ->get();
 
-//     return view('purchase_orders.index', compact('pos'));
-// }
-
-
-public function store(Request $request)
-{
-    $request->validate([
-        'po_no'    => 'required|unique:purchase_orders,po_no',
-        'pr_no'    => 'nullable',
-        'end_user' => 'required',
-        'supplier' => 'required',
-        'pdf_po'   => 'nullable|mimes:pdf|max:10240',
-    ], [
-        'pdf_po.mimes' => 'Only PDF files are allowed.',
-        'pdf_po.max'   => 'The PDF must not exceed 10 MB.',
-    ]);
-
-    $po = PurchaseOrder::create([
-        'po_no'    => $request->po_no,
-        'pr_no'    => $request->pr_no,
-        'end_user' => $request->end_user,
-        'supplier' => $request->supplier,
-        'status'   => 'Pending',
-    ]);
+    //     return view('purchase_orders.index', compact('pos'));
+    // }
 
 
-    if ($request->hasFile('pdf_po')) {
-        $file = $request->file('pdf_po');
-        $scanner = new \App\Services\FileSecurityScanner();
-        $scanResult = $scanner->scanUploadedFile($file);
-        if (!$scanResult['safe']) {
-            return response()->json([
-                'message' => 'Security Threat Blocked: ' . $scanResult['reason']
-            ], 422);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'po_no'    => 'required|unique:purchase_orders,po_no',
+            'pr_no'    => 'nullable',
+            'end_user' => 'required',
+            'supplier' => 'required',
+            'pdf_po'   => 'nullable|mimes:pdf|max:10240',
+        ], [
+            'pdf_po.mimes' => 'Only PDF files are allowed.',
+            'pdf_po.max'   => 'The PDF must not exceed 10 MB.',
+        ]);
+
+        $po = PurchaseOrder::create([
+            'po_no'    => $request->po_no,
+            'pr_no'    => $request->pr_no,
+            'end_user' => $request->end_user,
+            'supplier' => $request->supplier,
+            'status'   => 'Pending',
+        ]);
+
+
+        if ($request->hasFile('pdf_po')) {
+            $file = $request->file('pdf_po');
+            $scanner = new \App\Services\FileSecurityScanner();
+            $scanResult = $scanner->scanUploadedFile($file);
+            if (!$scanResult['safe']) {
+                return response()->json([
+                    'message' => 'Security Threat Blocked: ' . $scanResult['reason']
+                ], 422);
+            }
+
+            $filename = time() . '_' . $po->po_no . '.pdf';
+
+            $path = $file->storeAs(
+                'private/po_pdf',
+                $filename,
+                'local'
+            );
+
+            $po->update([
+                'pdf_po' => $path,
+            ]);
         }
 
-        $filename = time() . '_' . $po->po_no . '.pdf';
-
-        $path = $file->storeAs(
-            'private/po_pdf',
-            $filename,
-            'local'
-        );
-
-        $po->update([
-            'pdf_po' => $path,
-        ]);
+        return back()->with('po_success', 'Purchase Order added successfully.');
     }
 
-    return back()->with('po_success', 'Purchase Order added successfully.');
-}
+    public function import(Request $request)
+    {
+        try {
+            $import = new PurchaseOrdersImport;
 
-public function import(Request $request)
-{
-    try {
-        $import = new PurchaseOrdersImport;
+            Excel::import($import, $request->file('file'));
 
-        Excel::import($import, $request->file('file'));
+            $inserted = $import->inserted;
+            $duplicates = $import->duplicates;
+            $notImported = count($duplicates);
 
-        $inserted = $import->inserted;
-        $duplicates = $import->duplicates;
-        $notImported = count($duplicates);
+            return response()->json([
+                'success' => true,
+                'message' => 'Import completed successfully!',
+                'inserted_count' => $inserted,
+                'duplicate_count' => $notImported,
+                'duplicates' => $duplicates
+            ]);
+        } catch (\Exception $e) {
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Import completed successfully!',
-            'inserted_count' => $inserted,
-            'duplicate_count' => $notImported,
-            'duplicates' => $duplicates
-        ]);
-
-    } catch (\Exception $e) {
-
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 500);
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
-}
 
 
     public function destroy($id)
@@ -124,291 +124,287 @@ public function import(Request $request)
 
 
 
-public function storePOEvaluation(Request $request, $poId)
-{
-    DB::beginTransaction();
+    public function storePOEvaluation(Request $request, $poId)
+    {
+        DB::beginTransaction();
 
-    try {
-        $user = auth()->user();
+        try {
+            $user = auth()->user();
 
-        $request->validate([
-            'supplier_name' => 'required',
-            'po_no'         => 'required',
+            $request->validate([
+                'supplier_name' => 'required',
+                'po_no'         => 'required',
+            ]);
+
+            $po = PurchaseOrder::findOrFail($poId);
+
+
+            $exists = Evaluation::where('po_no', $request->po_no)
+                ->where(function ($q) {
+                    $q->where('delete_status', 0)
+                        ->orWhereNull('delete_status');
+                })
+                ->exists();
+
+            if ($exists) {
+                throw new \Exception("PO {$request->po_no} already exists in evaluation list.");
+            }
+
+            $office = Office::findOrFail($user->office_id);
+            $year = now()->year;
+
+
+            $evaluation = Evaluation::create([
+                'supplier_name'   => $request->supplier_name,
+                'po_no'           => $request->po_no,
+                'office_id'       => $office->id,
+                'date_evaluation' => now(),
+                'status'          => 'pending',
+                'covered_period'  => 'CY ' . $year,
+                'period_year'     => $year,
+            ]);
+
+
+            $po->update([
+                'status' => 'Added'
+            ]);
+
+
+            DB::commit();
+
+            return back()->with('po_success_added', 'Evaluation saved successfully.');
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+
+    public function countPurchaseOrders(Request $request)
+    {
+        $count = \App\Models\PurchaseOrder::count();
+
+        return response()->json([
+            'count' => $count
+        ]);
+    }
+
+
+    public function update(Request $request, $id)
+    {
+        $po = PurchaseOrder::findOrFail($id);
+
+        $request->merge([
+            'po_no' => trim($request->po_no),
+            'pr_no' => $request->filled('pr_no')
+                ? trim($request->pr_no)
+                : null,
         ]);
 
-        $po = PurchaseOrder::findOrFail($poId);
+        // Check if anything changed
+        $hasChanges =
+            $po->po_no !== $request->po_no ||
+            $po->pr_no !== $request->pr_no ||
+            $po->supplier !== $request->supplier ||
+            $po->end_user !== $request->end_user ||
+            $po->status !== $request->status ||
+            $request->hasFile('pdf_po') ||
+            $request->remove_pdf == "1";
 
-
-        $exists = Evaluation::where('po_no', $request->po_no)
-            ->where(function ($q) {
-                $q->where('delete_status', 0)
-                  ->orWhereNull('delete_status');
-            })
-            ->exists();
-
-        if ($exists) {
-            throw new \Exception("PO {$request->po_no} already exists in evaluation list.");
+        if (!$hasChanges) {
+            return back()->with('po_error_update', 'No changes detected.');
         }
 
-        $office = Office::findOrFail($user->office_id);
-        $year = now()->year;
-
-
-        $evaluation = Evaluation::create([
-            'supplier_name'   => $request->supplier_name,
-            'po_no'           => $request->po_no,
-            'office_id'       => $office->id,
-            'date_evaluation' => now(),
-            'status'          => 'pending',
-            'covered_period'  => 'CY ' . $year,
-            'period_year'     => $year,
+        $request->validate([
+            'po_no' => [
+                'required',
+                Rule::unique('purchase_orders', 'po_no')->ignore($id),
+            ],
+            'pr_no'    => 'nullable|string|max:255',
+            'supplier' => 'required|string|max:255',
+            'end_user' => 'required|string|max:255',
+            'status'   => 'required|in:Pending,Added,Approved,Cancelled',
+            'pdf_po'   => 'nullable|file|mimes:pdf|max:15240',
+        ], [
+            'po_no.unique' => 'This PO Number already exists.',
         ]);
 
+        DB::beginTransaction();
 
-        $po->update([
-            'status' => 'Added'
-        ]);
+        try {
 
+            $oldStatus = $po->status;
 
-        DB::commit();
+            $pdfUpdated = false;
+            $pdfRemoved = false;
 
-        return back()->with('po_success_added', 'Evaluation saved successfully.');
+            // Update fields
+            $po->po_no = $request->po_no;
+            $po->pr_no = $request->pr_no;
+            $po->supplier = $request->supplier;
+            $po->end_user = $request->end_user;
+            $po->status = $request->status;
 
-    } catch (\Exception $e) {
-
-        DB::rollBack();
-
-        return back()->with('error', $e->getMessage());
-    }
-}
-
-
-public function countPurchaseOrders(Request $request)
-{
-    $count = \App\Models\PurchaseOrder::count();
-
-    return response()->json([
-        'count' => $count
-    ]);
-}
-
-
-public function update(Request $request, $id)
-{
-    $po = PurchaseOrder::findOrFail($id);
-
-    $request->merge([
-        'po_no' => trim($request->po_no),
-        'pr_no' => $request->filled('pr_no')
-            ? trim($request->pr_no)
-            : null,
-    ]);
-
-    // Check if anything changed
-    $hasChanges =
-        $po->po_no !== $request->po_no ||
-        $po->pr_no !== $request->pr_no ||
-        $po->supplier !== $request->supplier ||
-        $po->end_user !== $request->end_user ||
-        $po->status !== $request->status ||
-        $request->hasFile('pdf_po') ||
-        $request->remove_pdf == "1";
-
-    if (!$hasChanges) {
-        return back()->with('po_error_update', 'No changes detected.');
-    }
-
-    $request->validate([
-        'po_no' => [
-            'required',
-            Rule::unique('purchase_orders', 'po_no')->ignore($id),
-        ],
-        'pr_no'    => 'nullable|string|max:255',
-        'supplier' => 'required|string|max:255',
-        'end_user' => 'required|string|max:255',
-        'status'   => 'required|in:Pending,Added,Approved,Cancelled',
-        'pdf_po'   => 'nullable|file|mimes:pdf|max:15240',
-    ], [
-        'po_no.unique' => 'This PO Number already exists.',
-    ]);
-
-    DB::beginTransaction();
-
-    try {
-
-        $oldStatus = $po->status;
-
-        $pdfUpdated = false;
-        $pdfRemoved = false;
-
-        // Update fields
-        $po->po_no = $request->po_no;
-        $po->pr_no = $request->pr_no;
-        $po->supplier = $request->supplier;
-        $po->end_user = $request->end_user;
-        $po->status = $request->status;
-
-        /*
+            /*
         |--------------------------------------------------------------------------
         | Remove Existing PDF
         |--------------------------------------------------------------------------
         */
-        if ($request->remove_pdf == "1") {
+            if ($request->remove_pdf == "1") {
 
-            if ($po->pdf_po && Storage::disk('local')->exists($po->pdf_po)) {
-                Storage::disk('local')->delete($po->pdf_po);
+                if ($po->pdf_po && Storage::disk('local')->exists($po->pdf_po)) {
+                    Storage::disk('local')->delete($po->pdf_po);
+                }
+
+                $po->pdf_po = null;
+                $pdfRemoved = true;
             }
 
-            $po->pdf_po = null;
-            $pdfRemoved = true;
-        }
-
-        /*
+            /*
         |--------------------------------------------------------------------------
         | Upload / Replace PDF
         |--------------------------------------------------------------------------
         */
-        if ($request->hasFile('pdf_po')) {
-            $file = $request->file('pdf_po');
-            $scanner = new \App\Services\FileSecurityScanner();
-            $scanResult = $scanner->scanUploadedFile($file);
-            if (!$scanResult['safe']) {
-                return back()->with('po_error_update', 'Security Threat Blocked: ' . $scanResult['reason']);
+            if ($request->hasFile('pdf_po')) {
+                $file = $request->file('pdf_po');
+                $scanner = new \App\Services\FileSecurityScanner();
+                $scanResult = $scanner->scanUploadedFile($file);
+                if (!$scanResult['safe']) {
+                    return back()->with('po_error_update', 'Security Threat Blocked: ' . $scanResult['reason']);
+                }
+
+                // Delete previous PDF if it still exists
+                if ($po->pdf_po && Storage::disk('local')->exists($po->pdf_po)) {
+                    Storage::disk('local')->delete($po->pdf_po);
+                }
+
+                $filename = time() . '_' .
+                    preg_replace('/[^A-Za-z0-9_-]/', '_', $po->po_no) .
+                    '.pdf';
+
+                $path = $file->storeAs(
+                    'private/po_pdf',
+                    $filename,
+                    'local'
+                );
+
+                $po->pdf_po = $path;
+                $pdfUpdated = true;
+                $pdfRemoved = false;
             }
 
-            // Delete previous PDF if it still exists
-            if ($po->pdf_po && Storage::disk('local')->exists($po->pdf_po)) {
-                Storage::disk('local')->delete($po->pdf_po);
-            }
+            $po->save();
 
-            $filename = time() . '_' .
-                preg_replace('/[^A-Za-z0-9_-]/', '_', $po->po_no) .
-                '.pdf';
-
-            $path = $file->storeAs(
-                'private/po_pdf',
-                $filename,
-                'local'
-            );
-
-            $po->pdf_po = $path;
-            $pdfUpdated = true;
-            $pdfRemoved = false;
-        }
-
-        $po->save();
-
-        /*
+            /*
         |--------------------------------------------------------------------------
         | Activity Log
         |--------------------------------------------------------------------------
         */
-        $changes = [];
+            $changes = [];
 
-        if ($oldStatus !== $po->status) {
-            $changes[] = "Status: {$oldStatus} → {$po->status}";
-        }
-
-        if ($pdfUpdated) {
-            $changes[] = "PDF replaced";
-        } elseif ($pdfRemoved) {
-            $changes[] = "PDF removed";
-        }
-
-        ActivityLog::create([
-            'user_id'     => auth()->id(),
-            'role'        => auth()->user()->role,
-            'activity'    => 'Update Purchase Order',
-            'description' => empty($changes)
-                ? "Updated PO {$po->po_no}"
-                : "Updated PO {$po->po_no} (" . implode(', ', $changes) . ")",
-            'status'      => 'success',
-            'ip_address'  => $request->ip(),
-            'user_agent'  => $request->userAgent(),
-        ]);
-
-        DB::commit();
-
-        return back()->with(
-            'po_updated',
-            'Purchase Order updated successfully.'
-        );
-
-    } catch (\Throwable $e) {
-
-        DB::rollBack();
-
-        Log::error('PO UPDATE FAILED', [
-            'message' => $e->getMessage(),
-            'trace'   => $e->getTraceAsString(),
-        ]);
-
-        return back()->with(
-            'po_error_update',
-            'Update failed: ' . $e->getMessage()
-        );
-    }
-}
-
-
-public function uploadPdf(Request $request, $id)
-{
-    try {
-
-        $request->validate([
-            'pdf_po' => 'required|mimes:pdf|max:30240',
-        ], [
-            'pdf_po.required' => 'Please select a PDF file.',
-            'pdf_po.mimes'    => 'Only PDF files are allowed.',
-            'pdf_po.max'      => 'The PDF must not exceed 30 MB.',
-        ]);
-
-        $po = PurchaseOrder::findOrFail($id);
-
-        if ($request->hasFile('pdf_po')) {
-            $file = $request->file('pdf_po');
-
-            $scanner = new \App\Services\FileSecurityScanner();
-            $scanResult = $scanner->scanUploadedFile($file);
-            if (!$scanResult['safe']) {
-                return back()->with('error_pdf', 'Security Threat Blocked: ' . $scanResult['reason']);
+            if ($oldStatus !== $po->status) {
+                $changes[] = "Status: {$oldStatus} → {$po->status}";
             }
 
-            // delete old file safely
-            if ($po->pdf_po && Storage::disk('local')->exists($po->pdf_po)) {
-                Storage::disk('local')->delete($po->pdf_po);
+            if ($pdfUpdated) {
+                $changes[] = "PDF replaced";
+            } elseif ($pdfRemoved) {
+                $changes[] = "PDF removed";
             }
 
-            $filename = time() . '_' . $po->po_no . '.pdf';
-
-            $path = $file->storeAs(
-                'private/po_pdf',
-                $filename,
-                'local'
-            );
-
-            $po->update([
-                'pdf_po' => $path
+            ActivityLog::create([
+                'user_id'     => auth()->id(),
+                'role'        => auth()->user()->role,
+                'activity'    => 'Update Purchase Order',
+                'description' => empty($changes)
+                    ? "Updated PO {$po->po_no}"
+                    : "Updated PO {$po->po_no} (" . implode(', ', $changes) . ")",
+                'status'      => 'success',
+                'ip_address'  => $request->ip(),
+                'user_agent'  => $request->userAgent(),
             ]);
+
+            DB::commit();
+
+            return back()->with(
+                'po_updated',
+                'Purchase Order updated successfully.'
+            );
+        } catch (\Throwable $e) {
+
+            DB::rollBack();
+
+            Log::error('PO UPDATE FAILED', [
+                'message' => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            return back()->with(
+                'po_error_update',
+                'Update failed: ' . $e->getMessage()
+            );
         }
-
-        return back()->with(
-            'success_pdf',
-            'Purchase Order PDF uploaded successfully.'
-        );
-
-    } catch (\Illuminate\Validation\ValidationException $e) {
-
-        return back()->with('error_pdf', $e->getMessage());
-
-    } catch (\Exception $e) {
-
-        return back()->with(
-            'error_pdf',
-            'Something went wrong. Please try again.'
-        );
     }
-}
+
+
+    public function uploadPdf(Request $request, $id)
+    {
+        try {
+
+            $request->validate([
+                'pdf_po' => 'required|mimes:pdf|max:30240',
+            ], [
+                'pdf_po.required' => 'Please select a PDF file.',
+                'pdf_po.mimes'    => 'Only PDF files are allowed.',
+                'pdf_po.max'      => 'The PDF must not exceed 30 MB.',
+            ]);
+
+            $po = PurchaseOrder::findOrFail($id);
+
+            if ($request->hasFile('pdf_po')) {
+                $file = $request->file('pdf_po');
+
+                $scanner = new \App\Services\FileSecurityScanner();
+                $scanResult = $scanner->scanUploadedFile($file);
+                if (!$scanResult['safe']) {
+                    return back()->with('error_pdf', 'Security Threat Blocked: ' . $scanResult['reason']);
+                }
+
+                // delete old file safely
+                if ($po->pdf_po && Storage::disk('local')->exists($po->pdf_po)) {
+                    Storage::disk('local')->delete($po->pdf_po);
+                }
+
+                $filename = time() . '_' . $po->po_no . '.pdf';
+
+                $path = $file->storeAs(
+                    'private/po_pdf',
+                    $filename,
+                    'local'
+                );
+
+                $po->update([
+                    'pdf_po' => $path
+                ]);
+            }
+
+            return back()->with(
+                'success_pdf',
+                'Purchase Order PDF uploaded successfully.'
+            );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            return back()->with('error_pdf', $e->getMessage());
+        } catch (\Exception $e) {
+
+            return back()->with(
+                'error_pdf',
+                'Something went wrong. Please try again.'
+            );
+        }
+    }
 
     public function viewPdf($id)
     {
@@ -435,15 +431,30 @@ public function uploadPdf(Request $request, $id)
 
         $query = PurchaseOrder::query();
 
+        // End-user office scoping
+        /** @var User|null $user */
+        $user = auth()->user();
+        if ($user && ($user->isEndUser() || $user->isPresentativeStaff())) {
+            $office = $user->office?->abbreviation ?? '';
+            if ($office === 'PMO') {
+                $query->where(function ($q) {
+                    $q->where('end_user', 'PMO')
+                        ->orWhere('end_user', 'LIKE', 'PMO-%');
+                });
+            } else {
+                $query->where('end_user', $office);
+            }
+        }
+
         // Search filter
         if ($request->filled('search')) {
             $search = trim($request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('po_no', 'like', "%{$search}%")
-                  ->orWhere('pr_no', 'like', "%{$search}%")
-                  ->orWhere('end_user', 'like', "%{$search}%")
-                  ->orWhere('supplier', 'like', "%{$search}%")
-                  ->orWhere('status', 'like', "%{$search}%");
+                    ->orWhere('pr_no', 'like', "%{$search}%")
+                    ->orWhere('end_user', 'like', "%{$search}%")
+                    ->orWhere('supplier', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%");
             });
         }
 
@@ -478,4 +489,3 @@ public function uploadPdf(Request $request, $id)
         ]);
     }
 }
-

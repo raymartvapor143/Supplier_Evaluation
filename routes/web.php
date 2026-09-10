@@ -196,8 +196,6 @@ Route::post('/purchase-orders/store', [PurchaseOrderController::class, 'store'])
 Route::delete('/purchase-orders/{id}', [PurchaseOrderController::class, 'destroy'])
     ->name('po.delete');
 
-Route::get('/purchase-orders/list-paginated', [PurchaseOrderController::class, 'listPaginated'])
-    ->name('po.list.paginated');
 
 Route::put('/purchase-orders/{id}', [PurchaseOrderController::class, 'update']);
 
@@ -330,6 +328,7 @@ Route::get('/purchase-orders/pdf/{id}', [PurchaseOrderController::class, 'viewPd
 
 
     Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('po.index');
+    Route::get('/purchase-orders/list-paginated', [PurchaseOrderController::class, 'listPaginated'])->name('po.list.paginated');
 
     Route::post('/purchase-orders/{id}/evaluate', [PurchaseOrderController::class, 'storePOEvaluation'])
     ->name('po.evaluate.save');
@@ -361,10 +360,23 @@ Route::get('/sidebar-counts', function () {
         $pdfsQuery->where('user_id', $user->id);
     }
 
+    $poQuery = PurchaseOrder::query();
+    if ($user && ($user->isEndUser() || $user->isPresentativeStaff())) {
+        $office = $user->office?->abbreviation ?? '';
+        if ($office === 'PMO') {
+            $poQuery->where(function ($q) {
+                $q->where('end_user', 'PMO')
+                  ->orWhere('end_user', 'LIKE', 'PMO-%');
+            });
+        } else {
+            $poQuery->where('end_user', $office);
+        }
+    }
+
     return response()->json([
         'evaluations' => $evaluationsQuery->count(),
         'requests'    => $requestsQuery->count(),
-        'po'          => PurchaseOrder::count(),
+        'po'          => $poQuery->count(),
         'users'       => User::where('status', 'inactive')->count(),
         'offices'     => Office::count(),
         'pdfs'        => $pdfsQuery->count(),
