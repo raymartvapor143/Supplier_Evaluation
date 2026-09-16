@@ -45,16 +45,25 @@ setInterval(refreshCsrfToken, CSRF_REFRESH_INTERVAL_MINUTES * 60 * 1000);
 
 async function safeFetch(url, options = {}) {
     options.headers = options.headers || {};
-    options.headers['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').content;
+    const metaToken = document.querySelector('meta[name="csrf-token"]');
+    if (metaToken) {
+        options.headers['X-CSRF-TOKEN'] = metaToken.content;
+    }
     options.headers['Accept'] = 'application/json';
 
     try {
         const res = await fetch(url, options);
 
+        if (res.status === 401) {
+            console.warn('Session expired or unauthorized (401). Redirecting to login...');
+            window.location.href = '/login';
+            return res;
+        }
+
         if (res.status === 419) {
             alert('Your session has expired. Reloading page...');
             window.location.reload();
-            return;
+            return res;
         }
 
         return res;

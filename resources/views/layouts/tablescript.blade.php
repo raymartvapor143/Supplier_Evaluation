@@ -78,10 +78,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
 
                     const res = await safeFetch('/evaluations/list?' + params.toString());
-                    allEvaluations[status] = await res.json();
+                    if (!res || !res.ok) {
+                        return;
+                    }
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        allEvaluations[status] = data;
+                    }
                 }
 
-                renderTable(status); // render from cache
+                if (Array.isArray(allEvaluations[status])) {
+                    renderTable(status); // render from cache
+                }
             }));
 
         } catch (err) {
