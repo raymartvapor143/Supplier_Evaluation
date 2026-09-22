@@ -80,6 +80,17 @@
                         class="w-full rounded-xl border border-orange-200 bg-white px-4 py-3 text-sm shadow-sm outline-none">
                 </div>
 
+                <!-- Covered Period (CY) -->
+                <div>
+                    <label class="mb-2 block text-sm font-semibold text-gray-700">Covered Period (CY)</label>
+                    <input type="text"
+                        name="item"
+                        id="edit_item_v2"
+                        readonly
+                        placeholder="e.g. CY 2026"
+                        class="w-full rounded-xl border border-orange-200 bg-white px-4 py-3 text-sm shadow-sm outline-none">
+                </div>
+
                 <!-- End User -->
                 <div class="relative">
                     <label class="mb-2 block text-sm font-semibold text-gray-700">End User</label>
@@ -305,6 +316,9 @@ function setPOViewMode_v2()
 {
     document.getElementById('edit_po_no_v2').readOnly = true;
     document.getElementById('edit_pr_no_v2').readOnly = true;
+    if (document.getElementById('edit_item_v2')) {
+        document.getElementById('edit_item_v2').readOnly = true;
+    }
     document.getElementById('edit_supplier_v2').readOnly = true;
     document.getElementById('edit_end_user_v2').readOnly = true;
 
@@ -329,6 +343,9 @@ function enablePOEdit_v2()
 {
     document.getElementById('edit_po_no_v2').readOnly = false;
     document.getElementById('edit_pr_no_v2').readOnly = false;
+    if (document.getElementById('edit_item_v2')) {
+        document.getElementById('edit_item_v2').readOnly = false;
+    }
     document.getElementById('edit_supplier_v2').readOnly = false;
     document.getElementById('edit_end_user_v2').readOnly = false;
 
@@ -392,13 +409,17 @@ function openPOEditModal_v2(
     endUser,
     status,
     pdfUrl,
-    role
+    role,
+    item = ''
 ) {
     currentPoId = poId;
     window__currentPdfUrl_v2 = pdfUrl;
 
     document.getElementById('edit_po_no_v2').value = poNo;
     document.getElementById('edit_pr_no_v2').value = prNo ?? '';
+    if (document.getElementById('edit_item_v2')) {
+        document.getElementById('edit_item_v2').value = item ?? '';
+    }
     document.getElementById('edit_supplier_v2').value = supplier;
     document.getElementById('edit_end_user_v2').value = endUser;
     document.getElementById('edit_status_v2').value = status;

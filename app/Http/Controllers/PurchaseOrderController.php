@@ -21,19 +21,6 @@ use Illuminate\Support\Facades\Crypt;
 class PurchaseOrderController extends Controller
 {
 
-    // public function index()
-    // {
-    //     $user = Auth::user();
-
-    //     $pos = PurchaseOrder::with('evaluation')
-    //         ->where('end_user', $user->office->abbreviation)
-    //         ->latest()
-    //         ->get();
-
-    //     return view('purchase_orders.index', compact('pos'));
-    // }
-
-
     public function store(Request $request)
     {
         $request->validate([
@@ -47,9 +34,20 @@ class PurchaseOrderController extends Controller
             'pdf_po.max'   => 'The PDF must not exceed 10 MB.',
         ]);
 
+        $coveredPeriod = trim($request->input('item') ?? $request->input('covered_period') ?? '');
+        if (empty($coveredPeriod) && $request->filled('year')) {
+            $coveredPeriod = 'CY ' . $request->year;
+        }
+        if (empty($coveredPeriod)) {
+            $coveredPeriod = 'CY ' . now()->year;
+        } elseif (!str_starts_with(strtoupper($coveredPeriod), 'CY')) {
+            $coveredPeriod = 'CY ' . $coveredPeriod;
+        }
+
         $po = PurchaseOrder::create([
             'po_no'    => $request->po_no,
             'pr_no'    => $request->pr_no,
+            'item'     => $coveredPeriod,
             'end_user' => $request->end_user,
             'supplier' => $request->supplier,
             'status'   => 'Pending',
@@ -151,8 +149,35 @@ class PurchaseOrderController extends Controller
             }
 
             $office = Office::findOrFail($user->office_id);
-            $year = now()->year;
 
+            // Determine covered_period and period_year
+            $coveredPeriod = trim($request->input('covered_period') ?? $request->input('item') ?? '');
+            $year = $request->input('year') ?? null;
+
+            if (empty($year) && !empty($coveredPeriod)) {
+                if (preg_match('/\b(20\d{2}|19\d{2})\b/', $coveredPeriod, $matches)) {
+                    $year = (int)$matches[1];
+                }
+            }
+
+            if (empty($year) && !empty($po->item)) {
+                if (preg_match('/\b(20\d{2}|19\d{2})\b/', $po->item, $matches)) {
+                    $year = (int)$matches[1];
+                    if (empty($coveredPeriod)) {
+                        $coveredPeriod = $po->item;
+                    }
+                }
+            }
+
+            if (empty($year)) {
+                $year = (int)now()->year;
+            }
+
+            if (empty($coveredPeriod)) {
+                $coveredPeriod = 'CY ' . $year;
+            } elseif (!str_starts_with(strtoupper($coveredPeriod), 'CY')) {
+                $coveredPeriod = 'CY ' . $coveredPeriod;
+            }
 
             $evaluation = Evaluation::create([
                 'supplier_name'   => $request->supplier_name,
@@ -160,7 +185,7 @@ class PurchaseOrderController extends Controller
                 'office_id'       => $office->id,
                 'date_evaluation' => now(),
                 'status'          => 'pending',
-                'covered_period'  => 'CY ' . $year,
+                'covered_period'  => $coveredPeriod,
                 'period_year'     => $year,
             ]);
 
@@ -243,6 +268,11 @@ class PurchaseOrderController extends Controller
             // Update fields
             $po->po_no = $request->po_no;
             $po->pr_no = $request->pr_no;
+            if ($request->filled('item')) {
+                $po->item = $request->item;
+            } elseif ($request->filled('covered_period')) {
+                $po->item = $request->covered_period;
+            }
             $po->supplier = $request->supplier;
             $po->end_user = $request->end_user;
             $po->status = $request->status;
@@ -472,6 +502,7 @@ class PurchaseOrderController extends Controller
                 'id'           => $po->id,
                 'po_no'        => $po->po_no,
                 'pr_no'        => $po->pr_no,
+                'item'         => $po->item,
                 'end_user'     => $po->end_user,
                 'supplier'     => $po->supplier,
                 'status'       => $po->status ?? 'Pending',

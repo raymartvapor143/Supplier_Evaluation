@@ -315,6 +315,24 @@ sticky top-0 z-20">
                        required>
             </div>
 
+            <!-- Covered Period (CY) -->
+            <div class="mb-3">
+                <label class="text-sm font-semibold text-gray-700">Covered Period (CY)</label>
+                <div class="flex items-center space-x-2 mt-1">
+                    <select id="add_po_year_select_v2"
+                            name="year"
+                            class="border rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-orange-400 focus:outline-none">
+                    </select>
+                    <input type="text"
+                           name="item"
+                           id="add_po_covered_period_v2"
+                           value="CY {{ now()->year }}"
+                           class="w-full border rounded-lg px-3 py-2 bg-gray-50 text-gray-800 font-medium text-sm focus:outline-none"
+                           readonly
+                           required>
+                </div>
+            </div>
+
             <!-- PDF Upload -->
             <div class="mb-3">
                 <label class="text-sm">Purchase Order PDF</label>
@@ -382,6 +400,24 @@ sticky top-0 z-20">
                 <label class="text-sm font-semibold">Department</label>
                 <input readonly type="text" name="end_user" id="eval_end_user_v2"
                     class="w-full border rounded-lg px-3 py-2" required>
+            </div>
+
+            <!-- Covered Period (CY) -->
+            <div class="mb-3">
+                <label class="text-sm font-semibold">Covered Period (CY)</label>
+                <div class="flex items-center space-x-2 mt-1">
+                    <select id="eval_year_select_v2"
+                            name="year"
+                            class="border rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-orange-400 focus:outline-none">
+                    </select>
+                    <input type="text"
+                           name="covered_period"
+                           id="eval_covered_period_v2"
+                           value="CY {{ now()->year }}"
+                           class="w-full border rounded-lg px-3 py-2 bg-gray-50 text-gray-800 font-medium text-sm focus:outline-none"
+                           readonly
+                           required>
+                </div>
             </div>
 
             <!-- OFFICE AUTO -->
@@ -536,7 +572,7 @@ function renderPOTable_v2(items) {
             let menuItems = '';
             if (status !== 'Added' && status !== 'Cancelled') {
                 menuItems += `
-                    <a href="#" onclick="openPOEvaluateModal_v2(${po.id}, '${escapeHtml(po.po_no)}', '${escapeHtml(po.supplier || '')}', '${escapeHtml(po.end_user || '')}'); return false;"
+                    <a href="#" onclick="openPOEvaluateModal_v2(${po.id}, '${escapeHtml(po.po_no)}', '${escapeHtml(po.supplier || '')}', '${escapeHtml(po.end_user || '')}', '${escapeHtml(po.item || '')}'); return false;"
                        class="block px-4 py-2 text-sm hover:bg-gray-100">
                         Add Evaluation
                     </a>
@@ -544,7 +580,7 @@ function renderPOTable_v2(items) {
             }
 
             menuItems += `
-                <a href="#" onclick="openPOEditModal_v2(${po.id}, '${escapeHtml(po.po_no)}', '${escapeHtml(po.pr_no || '')}', '${escapeHtml(po.supplier || '')}', '${escapeHtml(po.end_user || '')}', '${escapeHtml(po.status)}', ${po.pdf_url ? `'${po.pdf_url}'` : 'null'}, '${currentUserRole_v2}'); return false;"
+                <a href="#" onclick="openPOEditModal_v2(${po.id}, '${escapeHtml(po.po_no)}', '${escapeHtml(po.pr_no || '')}', '${escapeHtml(po.supplier || '')}', '${escapeHtml(po.end_user || '')}', '${escapeHtml(po.status)}', ${po.pdf_url ? `'${po.pdf_url}'` : 'null'}, '${currentUserRole_v2}', '${escapeHtml(po.item || '')}'); return false;"
                    class="block px-4 py-2 text-sm hover:bg-gray-100">
                     View
                 </a>
@@ -583,7 +619,10 @@ function renderPOTable_v2(items) {
 
         html += `
             <tr class="border-b hover:bg-orange-50/50 transition duration-200 po-row-v2 ${rowBg}">
-                <td class="px-5 py-4 text-gray-700 font-semibold text-xs">${escapeHtml(po.po_no)}</td>
+                <td class="px-5 py-4 text-gray-700 font-semibold text-xs">
+                    <div>${escapeHtml(po.po_no)}</div>
+                    ${po.item ? `<span class="inline-block mt-0.5 text-[10px] font-medium text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">${escapeHtml(po.item)}</span>` : ''}
+                </td>
                 <td class="px-5 py-4 text-gray-700 text-xs">${escapeHtml(po.pr_no || 'N/A')}</td>
                 <td class="px-5 py-4 text-gray-700 text-xs">${escapeHtml(po.end_user || '')}</td>
                 <td class="px-5 py-4 text-gray-700 text-xs">${escapeHtml(po.supplier || '')}</td>
@@ -744,6 +783,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function openPOInsertModal_v2() {
+    const addSelect = document.getElementById('add_po_year_select_v2');
+    const addInput = document.getElementById('add_po_covered_period_v2');
+    const currentYear = new Date().getFullYear();
+    if (addSelect && addSelect.options.length === 0) {
+        initCYSelects_v2();
+    } else if (addSelect && !addSelect.value) {
+        addSelect.value = currentYear;
+        if (addInput) addInput.value = `CY ${currentYear}`;
+    }
     document.getElementById('poInsertModal_v2').classList.remove('hidden');
     document.getElementById('poInsertModal_v2').classList.add('flex');
     loadOfficesForAddPO_v2();
@@ -759,10 +807,45 @@ function closePOInsertModal_v2() {
 // ===============================
 // EVALUATE MODAL
 // ===============================
-function openPOEvaluateModal_v2(poId, poNo, supplier, endUser) {
+function openPOEvaluateModal_v2(poId, poNo, supplier, endUser, coveredPeriod = '') {
     document.getElementById('eval_po_no_v2').value = poNo;
     document.getElementById('eval_supplier_v2').value = supplier;
     document.getElementById('eval_end_user_v2').value = endUser;
+
+    const evalSelect = document.getElementById('eval_year_select_v2');
+    const evalInput = document.getElementById('eval_covered_period_v2');
+
+    let targetYear = new Date().getFullYear();
+    let targetText = `CY ${targetYear}`;
+
+    if (coveredPeriod && coveredPeriod.trim() !== '') {
+        const match = coveredPeriod.match(/\b(20\d{2}|19\d{2})\b/);
+        if (match) {
+            targetYear = parseInt(match[1]);
+        }
+        targetText = coveredPeriod.startsWith('CY') ? coveredPeriod : `CY ${coveredPeriod}`;
+    }
+
+    if (evalSelect) {
+        let exists = false;
+        for (let i = 0; i < evalSelect.options.length; i++) {
+            if (parseInt(evalSelect.options[i].value) === targetYear) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            const opt = document.createElement('option');
+            opt.value = targetYear;
+            opt.textContent = targetYear;
+            evalSelect.appendChild(opt);
+        }
+        evalSelect.value = targetYear;
+    }
+
+    if (evalInput) {
+        evalInput.value = targetText;
+    }
 
     document.getElementById('poEvaluateForm_v2').action =
         `/purchase-orders/${poId}/evaluate`;
@@ -860,7 +943,46 @@ const POToast = Swal.mixin({
     }
 });
 
+function initCYSelects_v2() {
+    const currentYear = new Date().getFullYear();
+
+    const addSelect = document.getElementById('add_po_year_select_v2');
+    const addInput = document.getElementById('add_po_covered_period_v2');
+    if (addSelect && addInput) {
+        addSelect.innerHTML = '';
+        for (let y = currentYear - 5; y <= currentYear + 5; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === currentYear) opt.selected = true;
+            addSelect.appendChild(opt);
+        }
+        addInput.value = `CY ${currentYear}`;
+        addSelect.addEventListener('change', function () {
+            addInput.value = this.value ? `CY ${this.value}` : '';
+        });
+    }
+
+    const evalSelect = document.getElementById('eval_year_select_v2');
+    const evalInput = document.getElementById('eval_covered_period_v2');
+    if (evalSelect && evalInput) {
+        evalSelect.innerHTML = '';
+        for (let y = currentYear - 5; y <= currentYear + 5; y++) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            if (y === currentYear) opt.selected = true;
+            evalSelect.appendChild(opt);
+        }
+        evalInput.value = `CY ${currentYear}`;
+        evalSelect.addEventListener('change', function () {
+            evalInput.value = this.value ? `CY ${this.value}` : '';
+        });
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+    initCYSelects_v2();
     @if(session('po_deleted'))
     POToast.fire({
         icon: 'success',
