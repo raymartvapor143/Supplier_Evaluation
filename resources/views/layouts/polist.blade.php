@@ -292,12 +292,19 @@ sticky top-0 z-20">
                        class="w-full border rounded-lg px-3 py-2">
             </div>
 
-            <div class="mb-3">
+            <div class="mb-3 relative">
                 <label class="text-sm">End User</label>
                 <input type="text"
                        name="end_user"
+                       id="add_end_user_v2"
+                       placeholder="Search End User / Office Abbreviation..."
+                       autocomplete="off"
                        class="w-full border rounded-lg px-3 py-2"
                        required>
+
+                <div id="addEndUserDropdown_v2"
+                     class="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-xl mt-1 hidden max-h-56 overflow-y-auto p-2">
+                </div>
             </div>
 
             <div class="mb-3">
@@ -656,14 +663,97 @@ function closePOModal_v2() {
     document.getElementById('poListModal_v2').classList.remove('flex');
 }
 
+let cachedAddOffices_v2 = [];
+
+async function loadOfficesForAddPO_v2() {
+    if (typeof cachedOffices_v2 !== 'undefined' && cachedOffices_v2.length > 0) {
+        return cachedOffices_v2;
+    }
+    if (cachedAddOffices_v2.length > 0) return cachedAddOffices_v2;
+    try {
+        const res = await fetch('/offices/list');
+        cachedAddOffices_v2 = await res.json();
+    } catch (e) {
+        console.error('Failed to load offices for Add PO', e);
+        cachedAddOffices_v2 = [];
+    }
+    return cachedAddOffices_v2;
+}
+
+function renderAddEndUserDropdown_v2(filter = '') {
+    const dropdown = document.getElementById('addEndUserDropdown_v2');
+    if (!dropdown) return;
+    const search = filter.trim().toLowerCase();
+    const sourceList = (typeof cachedOffices_v2 !== 'undefined' && cachedOffices_v2.length > 0) 
+        ? cachedOffices_v2 
+        : cachedAddOffices_v2;
+
+    const filtered = sourceList.filter(o => {
+        const abbr = (o.abbreviation ?? '').toLowerCase();
+        const name = (o.name ?? '').toLowerCase();
+        return abbr.includes(search) || name.includes(search);
+    });
+
+    if (filtered.length === 0) {
+        dropdown.innerHTML = `<div class="px-3 py-2 text-xs text-gray-400">No matching offices</div>`;
+    } else {
+        dropdown.innerHTML = filtered.map(o => {
+            const displayVal = o.abbreviation ? o.abbreviation : o.name;
+            const subText = o.abbreviation && o.name ? `<span class="text-xs text-gray-500 block">${escapeHtml(o.name)}</span>` : '';
+            return `
+                <div class="px-3 py-2 text-sm rounded-lg hover:bg-orange-100 cursor-pointer font-medium text-gray-800 transition text-left"
+                     onclick="selectAddEndUser_v2('${escapeHtml(displayVal).replace(/'/g, "\\'")}')">
+                    ${escapeHtml(displayVal)}
+                    ${subText}
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function selectAddEndUser_v2(val) {
+    const input = document.getElementById('add_end_user_v2');
+    if (input) input.value = val;
+    const dropdown = document.getElementById('addEndUserDropdown_v2');
+    if (dropdown) dropdown.classList.add('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const endUserInput = document.getElementById('add_end_user_v2');
+    const dropdown = document.getElementById('addEndUserDropdown_v2');
+
+    if (endUserInput && dropdown) {
+        endUserInput.addEventListener('input', async () => {
+            await loadOfficesForAddPO_v2();
+            renderAddEndUserDropdown_v2(endUserInput.value);
+            dropdown.classList.remove('hidden');
+        });
+
+        endUserInput.addEventListener('focus', async () => {
+            await loadOfficesForAddPO_v2();
+            renderAddEndUserDropdown_v2(endUserInput.value);
+            dropdown.classList.remove('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#add_end_user_v2') && !e.target.closest('#addEndUserDropdown_v2')) {
+                dropdown.classList.add('hidden');
+            }
+        });
+    }
+});
+
 function openPOInsertModal_v2() {
     document.getElementById('poInsertModal_v2').classList.remove('hidden');
     document.getElementById('poInsertModal_v2').classList.add('flex');
+    loadOfficesForAddPO_v2();
 }
 
 function closePOInsertModal_v2() {
     document.getElementById('poInsertModal_v2').classList.add('hidden');
     document.getElementById('poInsertModal_v2').classList.remove('flex');
+    const dropdown = document.getElementById('addEndUserDropdown_v2');
+    if (dropdown) dropdown.classList.add('hidden');
 }
 
 // ===============================
