@@ -23,9 +23,21 @@ use Illuminate\Support\Facades\Password;
 class AuthController extends Controller
 {
    public function login(){
+       try {
+           $offices = Office::where('name', '!=', 'PGSO-Warehouse')->get();
+       } catch (\Throwable $e) {
+           \Illuminate\Support\Facades\Log::warning('DB connection lost in login(), reconnecting: ' . $e->getMessage());
+           try {
+               \Illuminate\Support\Facades\DB::purge();
+               \Illuminate\Support\Facades\DB::reconnect();
+               $offices = Office::where('name', '!=', 'PGSO-Warehouse')->get();
+           } catch (\Throwable $retryException) {
+               \Illuminate\Support\Facades\Log::error('DB reconnect failed in login(): ' . $retryException->getMessage());
+               $offices = collect();
+           }
+       }
 
-    $offices = Office::where('name', '!=', 'PGSO-Warehouse')->get();
-    return view('auth.login', compact('offices'));
+       return view('auth.login', compact('offices'));
    }
 
     /**
