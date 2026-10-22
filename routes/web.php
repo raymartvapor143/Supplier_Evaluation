@@ -64,55 +64,10 @@ Route::get('/refresh-csrf', function () {
 });
 
 Route::get('/', function () {
-    if (auth()->check()) {
-
-        $user = auth()->user();
-
-        if ($user->role === 'administrator') {
-            return redirect()->route('admin.dashboard');
-        }
-
-        if ($user->role === 'end_user') {
-            return redirect()->route('enduser.dashboard');
-        }
-        if ($user->role === 'presentative_staff') {
-            return redirect()->route('enduser.dashboard');
-        }
-        if ($user->role === 'head') {
-            return redirect()->route('head.dashboard');
-        }
-    }
-
     return redirect()->route('auth.login');
 });
 
-Route::get('/login', function () {
-    if (auth()->check()) {
-
-        $user = auth()->user();
-
-        // Redirect based on role
-        if ($user->role === 'administrator') {
-            return redirect()->route('admin.dashboard');
-        }
-
-        if ($user->role === 'end_user') {
-            return redirect()->route('enduser.dashboard');
-        }
-        if ($user->role === 'head') {
-            return redirect()->route('head.dashboard');
-        }
-
-        if ($user->role === 'presentative_staff') {
-            return redirect()->route('enduser.dashboard');
-        }
-
-        // fallback
-        return redirect('/');
-    }
-
-    return app(App\Http\Controllers\AuthController::class)->login();
-})->name('auth.login');
+Route::get('/login', [AuthController::class, 'login'])->name('auth.login');
 
 
 

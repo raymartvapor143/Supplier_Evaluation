@@ -23,6 +23,28 @@ use Illuminate\Support\Facades\Password;
 class AuthController extends Controller
 {
    public function login(){
+       if (Auth::check()) {
+           $user = Auth::user();
+
+           if ($user->role === 'administrator') {
+               return redirect()->route('admin.dashboard');
+           }
+
+           if ($user->role === 'end_user') {
+               return redirect()->route('enduser.dashboard');
+           }
+
+           if ($user->role === 'head') {
+               return redirect()->route('head.dashboard');
+           }
+
+           if ($user->role === 'presentative_staff') {
+               return redirect()->route('enduser.dashboard');
+           }
+
+           return redirect('/');
+       }
+
        try {
            $offices = Office::where('name', '!=', 'PGSO-Warehouse')->get();
        } catch (\Throwable $e) {
@@ -459,10 +481,7 @@ public function loginStatus(Request $request)
 
 public function logout(Request $request)
 {
-    Auth::logout();
-
     if (Auth::check()) {
-
         ActivityLog::create([
             'user_id' => Auth::id(),
             'role' => Auth::user()->role,
@@ -472,13 +491,14 @@ public function logout(Request $request)
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
-
     }
+
+    Auth::logout();
 
     $request->session()->invalidate();
     $request->session()->regenerateToken();
 
-    return redirect('/login');
+    return redirect()->route('auth.login');
 }
 
 
