@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Config;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -12,13 +13,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        
+        //
     }
 
-
+    /**
+     * Bootstrap any application services.
+     */
     public function boot(): void
     {
-        if (config('app.env') === 'production' || str_starts_with(config('app.url'), 'https://')) {
+        $isProduction = Config::get('app.env') === 'production' || str_starts_with((string) Config::get('app.url'), 'https://');
+
+        if ($isProduction) {
             URL::forceScheme('https');
         }
     }
